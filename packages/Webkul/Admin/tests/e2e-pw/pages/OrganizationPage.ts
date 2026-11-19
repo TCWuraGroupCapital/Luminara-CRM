@@ -55,6 +55,12 @@ export default class OrganizationPage extends CoreLocators{
 
 
     // Save organization
+    // The form is a Vue component. On a slow machine the name can be typed before the
+    // component mounts, and mounting then renders the field empty, so the save fails
+    // validation. By this point the form is interactive, so set the name again.
+    await this.orgNameTextbox.fill(orgData.name);
+    await expect(this.orgNameTextbox).toHaveValue(orgData.name);
+
     await this.saveOrganizationButton.click();
     await expect(this.organizationCreateSuccessMessage.first()).toBeVisible();
     // await this.searchInputExact.fill(orgData.name);
@@ -85,6 +91,10 @@ export default class OrganizationPage extends CoreLocators{
     await this.orgPostcodeTextbox.fill(orgData.postcode);
 
     // Save organization
+    // See createOrganization: set the name again once the form is interactive.
+    await this.orgNameTextbox.fill(orgData.name);
+    await expect(this.orgNameTextbox).toHaveValue(orgData.name);
+
     await this.saveOrganizationButton.click();
     return orgData;
 
