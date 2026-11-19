@@ -17,7 +17,9 @@ RUN cd packages/Webkul/Admin && npm run build \
     && cd ../WebForm && npm run build
 
 FROM php:8.3-apache-bookworm AS base
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# The upgrade pulls Debian security fixes published after the base image was built
+# (Apache in particular), so the Trivy gate in CI scans a patched image.
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     $PHPIZE_DEPS curl git unzip default-mysql-client libfreetype6-dev libicu-dev libjpeg62-turbo-dev \
     libkrb5-dev libc-client-dev libonig-dev libpng-dev libssl-dev libxml2-dev libzip-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
