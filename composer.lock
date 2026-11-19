@@ -69,8 +69,7 @@
                 "issues": "https://github.com/anthropics/anthropic-sdk-php/issues",
                 "source": "https://github.com/anthropics/anthropic-sdk-php/tree/v1.8.0"
             },
-            "time": "2026-11-10T16:24:39+00:00",
-            "published-time": "2026-11-10T16:33:51+00:00"
+            "time": "2026-11-10T16:24:39+00:00"
         },
         {
             "name": "barryvdh/laravel-dompdf",
@@ -4806,8 +4805,7 @@
                 "issues": "https://github.com/open-telemetry/opentelemetry-php/issues",
                 "source": "https://github.com/open-telemetry/opentelemetry-php"
             },
-            "time": "2026-11-05T11:54:49+00:00",
-            "published-time": "2026-11-05T12:00:54+00:00"
+            "time": "2026-11-05T11:54:49+00:00"
         },
         {
             "name": "open-telemetry/context",
@@ -4865,8 +4863,7 @@
                 "issues": "https://github.com/open-telemetry/opentelemetry-php/issues",
                 "source": "https://github.com/open-telemetry/opentelemetry-php"
             },
-            "time": "2026-11-05T11:54:49+00:00",
-            "published-time": "2026-11-05T12:00:45+00:00"
+            "time": "2026-11-05T11:54:49+00:00"
         },
         {
             "name": "paragonie/random_compat",
@@ -4995,8 +4992,7 @@
                 "issues": "https://github.com/php-http/discovery/issues",
                 "source": "https://github.com/php-http/discovery/tree/1.20.0"
             },
-            "time": "2024-10-02T11:20:13+00:00",
-            "published-time": "2024-10-02T11:21:00+00:00"
+            "time": "2024-10-02T11:20:13+00:00"
         },
         {
             "name": "phpoffice/phpspreadsheet",
@@ -6941,8 +6937,7 @@
                 "issues": "https://github.com/standard-webhooks/standard-webhooks/issues",
                 "source": "https://github.com/standard-webhooks/standard-webhooks/tree/v1.0.2"
             },
-            "time": "2026-02-18T19:02:27+00:00",
-            "published-time": "2026-02-25T17:09:26+00:00"
+            "time": "2026-02-18T19:02:27+00:00"
         },
         {
             "name": "symfony/clock",
@@ -11890,11 +11885,11 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "2.3.5",
+            "version": "2.3.6",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/645a1bd6bead15fc1b8474137467961d0fa30a79",
-                "reference": "645a1bd6bead15fc1b8474137467961d0fa30a79",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/00cedebb76cc82c1592414fa4f616cefdccda16f",
+                "reference": "00cedebb76cc82c1592414fa4f616cefdccda16f",
                 "shasum": ""
             },
             "require": {
@@ -11950,7 +11945,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-11-03T12:14:22+00:00"
+            "time": "2026-11-15T19:58:26+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",
@@ -14154,5 +14149,5 @@
     "platform-overrides": {
         "php": "8.3.30"
     },
-    "plugin-api-version": "2.11.0"
+    "plugin-api-version": "2.9.0"
 }
