@@ -176,7 +176,7 @@ test.describe("notifications", () => {
 
         await bell(adminPage).click();
 
-        const dots = adminPage.locator('.overflow-y-auto span[style*="width: 8px"]');
+        const dots = adminPage.locator('header .overflow-y-auto span[style*="width: 8px"]');
 
         await expect(dots, "each unread row should carry a dot").toHaveCount(unread);
     });
@@ -185,7 +185,7 @@ test.describe("notifications", () => {
         await bell(adminPage).click();
 
         const icons = await adminPage.evaluate(() => {
-            const feed = document.querySelector(".overflow-y-auto");
+            const feed = document.querySelector("header .overflow-y-auto");
 
             if (! feed) {
                 return null;
@@ -214,7 +214,7 @@ test.describe("notifications", () => {
         await bell(adminPage).click();
 
         const overflows = await adminPage.evaluate(() => {
-            const feed = document.querySelector(".overflow-y-auto") as HTMLElement | null;
+            const feed = document.querySelector("header .overflow-y-auto") as HTMLElement | null;
 
             if (! feed) {
                 return null;

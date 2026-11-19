@@ -35,7 +35,7 @@ jobs:
         run: docker build --target production -f docker/Dockerfile -t luminara-crm:ci .
 
       - name: Scan production image with Trivy
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: luminara-crm:ci
           format: table

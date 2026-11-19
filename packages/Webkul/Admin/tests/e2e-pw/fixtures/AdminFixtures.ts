@@ -24,33 +24,30 @@ export const test = base.extend<AdminFixtures>({
         const admin = await new Admin(page)
 
 
-        if (!authExists) {
-            /**
-            * Authenticate the admin user.
-            */
+        /**
+         * Signing in redirects to the user's home page, which is not always the dashboard, and the
+         * click returns before that redirect lands. Waiting for it and then opening the dashboard
+         * means every test starts from the same page whether or not a saved session existed, and
+         * the saved session always carries the signed-in cookie.
+         */
+        const signIn = async () => {
             await admin.adminLogin("admin@example.com", "admin123");
 
-            /**
-            * Save authentication state to a file.
-            */
+            await page.waitForURL((url) => ! url.pathname.includes("admin/login"));
+
             await context.storageState({ path: ADMIN_AUTH_STATE_PATH });
-        } else {
-            /**
-            * Navigate to the dashboard.
-            */
+
             await page.goto("admin/dashboard");
-        }
+        };
 
-        if (page.url().includes("admin/login")) {
-            /**
-            * Authenticate the admin user.
-            */
-            await admin.adminLogin("admin@example.com", "admin123");
+        if (! authExists) {
+            await signIn();
+        } else {
+            await page.goto("admin/dashboard");
 
-            /**
-            * Save authentication state to a file.
-            */
-            await context.storageState({ path: ADMIN_AUTH_STATE_PATH });
+            if (page.url().includes("admin/login")) {
+                await signIn();
+            }
         }
 
         /**

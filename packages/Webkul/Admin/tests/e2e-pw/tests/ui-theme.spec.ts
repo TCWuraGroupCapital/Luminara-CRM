@@ -26,10 +26,10 @@ test.describe.serial("admin UI and theme", () => {
         await expect(adminPage.getByRole("textbox", { name: "Mega Search" })).toBeVisible();
 
         /**
-         * The layout renders the same id three times — desktop, mobile and the small header mark —
-         * so the first visible one is what is asserted rather than the id alone.
+         * On desktop the logo lives in the sidebar. It renders a light and a dark image, so the
+         * first one is the visible one while the theme is light.
          */
-        await expect(adminPage.locator("#logo-image").first()).toBeVisible();
+        await expect(adminPage.locator("#admin-sidebar img").first()).toBeVisible();
     });
 
     test("the theme starts light", async ({ adminPage }) => {
