@@ -89,6 +89,6 @@ class DiscoveryController extends Controller
                 'passport_issuance_cli' => 'php artisan luminara:passport {email} {slug} --json',
             ],
             'receipt_verification_url' => url('/receipts/{receipt_code}'),
-        ]);
+        ], 200, [], JSON_UNESCAPED_SLASHES);
     }
 }
