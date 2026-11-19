@@ -1,0 +1,547 @@
+<!doctype html>
+<!--
+  BRIEF
+  Audience: Luminara sales reps and managers who run leads all day and now supervise an in-app agent.
+            Their job on this screen: see what the agent wants to change, sign it or reject it, and get back to selling.
+  Message:  The agent drafts in pencil; people sign in ink. Nothing the agent proposes is real until a person signs it.
+  Constraints: Krayin admin (Blade + Vue 3 + Tailwind), 10 locales incl. RTL (ar, fa) so logical properties only,
+               light + dark, WCAG 2.2 AA, EU AI Act Art. 50 disclosure (people must know they are dealing with AI).
+
+  DIRECTION — "Drafting table": operational density + the conventions of technical drawing and copy-editing.
+  References and the move borrowed from each:
+    - Architectural drawings: dashed = proposed, solid = existing, hatch = to be removed. Proposal states use exactly that.
+    - Editors' non-photo blue pencil: marks that are notes, never part of the final print. The agent's colour.
+    - Linear (2024 LCH theme, 2026 "calmer" refresh): tinted neutrals stepping in lightness, structure felt not seen.
+    - Stripe receipts: every run is an itemised receipt with an id, a time and what changed.
+  Signature move: "Inking" — signing a proposal draws its dashed pencil outline into solid ink and fills the hatch.
+  Type: IBM Plex Sans + Plex Mono (engineering-drawing lineage; Plex ships Arabic, JP and KR cuts for our locales).
+-->
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luminara Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Direction: Drafting table. Ink hue 190 (brand teal), pencil hue 250 (non-photo blue), stamp hue 30 (vermilion). */
+:root {
+  color-scheme: light dark;
+  --h: 190;
+  --paper:     light-dark(oklch(0.985 0.004 var(--h)), oklch(0.165 0.012 var(--h)));
+  --sheet:     light-dark(oklch(1 0 0),                oklch(0.195 0.013 var(--h)));
+  --well:      light-dark(oklch(0.965 0.006 var(--h)), oklch(0.225 0.014 var(--h)));
+  --rule:      light-dark(oklch(0.25 0.03 var(--h) / 0.12), oklch(1 0 0 / 0.10));
+  --rule-2:    light-dark(oklch(0.25 0.03 var(--h) / 0.22), oklch(1 0 0 / 0.18));
+  --ink:       light-dark(oklch(0.22 0.025 var(--h)), oklch(0.94 0.008 var(--h)));   /* 16.5:1 / 15.8:1 */
+  --ink-2:     light-dark(oklch(0.45 0.02 var(--h)),  oklch(0.76 0.012 var(--h)));   /* 7.1:1 / 7.9:1 */
+  --ink-3:     light-dark(oklch(0.52 0.016 var(--h)), oklch(0.66 0.012 var(--h)));   /* lowest text, 4.6:1+ */
+  --brand:     light-dark(oklch(0.45 0.085 186), oklch(0.78 0.10 186));
+  --brand-fg:  light-dark(oklch(0.99 0.005 186), oklch(0.16 0.02 186));              /* 6.9:1 / 10.1:1 */
+  --pencil:    light-dark(oklch(0.47 0.10 250), oklch(0.78 0.09 245));               /* 6.5:1 / 8.7:1 */
+  --pencil-wash: light-dark(oklch(0.95 0.025 245), oklch(0.27 0.04 250));
+  --pencil-line: light-dark(oklch(0.47 0.10 250 / 0.55), oklch(0.78 0.09 245 / 0.5));
+  --stamp:     light-dark(oklch(0.52 0.19 30), oklch(0.74 0.14 32));
+  --stamp-wash: light-dark(oklch(0.96 0.025 30), oklch(0.27 0.05 30));
+  --ok:        light-dark(oklch(0.48 0.11 155), oklch(0.78 0.12 155));
+  --focus:     light-dark(oklch(0.47 0.14 250), oklch(0.82 0.11 245));
+
+  --font: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --t-xs: 0.8125rem; --t-sm: 0.875rem; --t-md: 1rem; --t-lg: 1.125rem; --t-xl: 1.5rem; --t-2xl: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
+
+  --r-1: 4px; --r-2: 10px;                     /* control / object; concentric: object = control + 6px padding */
+  --hatch: repeating-linear-gradient(135deg, var(--pencil-line) 0 1px, transparent 1px 7px);
+  --hatch-stamp: repeating-linear-gradient(135deg, color-mix(in oklch, var(--stamp) 45%, transparent) 0 1px, transparent 1px 7px);
+  --lift: 0 1px 2px light-dark(oklch(0.2 0.03 var(--h) / 0.06), oklch(0 0 0 / 0.4)),
+          0 8px 24px -12px light-dark(oklch(0.2 0.03 var(--h) / 0.16), oklch(0 0 0 / 0.6));
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+}
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"]  { color-scheme: dark; }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 400 var(--t-sm)/1.5 var(--font); }
+h1, h2, h3 { margin: 0; font-weight: 600; text-wrap: balance; }
+p { margin: 0; text-wrap: pretty; }
+button, input, textarea { font: inherit; color: inherit; }
+.num, time, .mono { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--mono); font-size: 0.92em; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-1); }
+
+/* ---------- Shell ---------- */
+.shell { display: grid; grid-template-columns: 220px minmax(0, 1fr) 380px; grid-template-rows: 52px minmax(0, 1fr); min-height: 100dvh; }
+.bar { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; padding-inline: 16px; border-block-end: 1px solid var(--rule); background: var(--paper); position: sticky; top: 0; z-index: 5; }
+.mark { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: var(--t-md); letter-spacing: -0.01em; }
+.mark svg { width: 24px; height: 24px; }
+.bar .grow { flex: 1; }
+.sample { font-size: var(--t-xs); color: var(--ink-2); border: 1px dashed var(--rule-2); padding: 2px 8px; border-radius: 999px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; padding: 0 14px; border-radius: var(--r-1); border: 1px solid var(--rule-2); background: var(--sheet); font-weight: 500; cursor: pointer; transition: background-color .12s, border-color .12s; white-space: nowrap; }
+.btn:hover { background: var(--well); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.btn.sign { background: var(--brand); color: var(--brand-fg); border-color: transparent; }
+.btn.sign:hover { background: oklch(from var(--brand) calc(l - 0.04) c h); }
+.btn.danger { color: var(--stamp); border-color: color-mix(in oklch, var(--stamp) 45%, transparent); }
+.btn.danger[aria-pressed="true"] { background: var(--stamp); color: var(--sheet); }
+.btn.quiet { border-color: transparent; background: transparent; color: var(--ink-2); }
+.btn.quiet:hover { background: var(--well); color: var(--ink); }
+.only-narrow { display: none; }
+
+nav.side { border-inline-end: 1px solid var(--rule); padding: 16px 10px; display: flex; flex-direction: column; gap: 2px; position: sticky; top: 52px; align-self: start; height: calc(100dvh - 52px); overflow-y: auto; }
+nav.side a { display: flex; justify-content: space-between; align-items: center; min-height: 34px; padding-inline: 10px; border-radius: var(--r-1); color: var(--ink-2); text-decoration: none; }
+nav.side a:hover { background: var(--well); color: var(--ink); }
+nav.side a[aria-current="page"] { background: var(--sheet); color: var(--ink); font-weight: 500; box-shadow: inset 0 0 0 1px var(--rule); }
+nav.side .count { font-size: var(--t-xs); color: var(--ink-3); }
+nav.side .count.wait { color: var(--pencil); font-weight: 500; }
+nav.side .sep { height: 1px; background: var(--rule); margin: 10px; }
+nav.side .label { font-size: var(--t-xs); color: var(--ink-3); padding: 6px 10px 2px; }
+
+main { padding: 28px clamp(16px, 3vw, 40px) 64px; display: flex; flex-direction: column; gap: 40px; min-width: 0; }
+main > * { width: 100%; max-width: 68rem; }
+.head { display: flex; flex-direction: column; gap: 6px; max-width: 46rem; }
+.head .date { color: var(--ink-2); font-size: var(--t-sm); }
+.head h1 { font-size: var(--t-2xl); line-height: 1.15; letter-spacing: -0.02em; }
+.head p { color: var(--ink-2); font-size: var(--t-md); }
+section > h2 { font-size: var(--t-lg); letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-block-end: 14px; }
+section > h2 .aside { font-size: var(--t-sm); font-weight: 400; color: var(--ink-2); }
+
+/* ---------- Proposal slip: the signature ---------- */
+.slips { display: flex; flex-direction: column; gap: 16px; }
+.slip { position: relative; border-radius: var(--r-2); background: var(--sheet); padding: 18px 20px; display: grid; gap: 14px; isolation: isolate; }
+.slip::before { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 1.5px dashed var(--pencil-line); pointer-events: none; z-index: 1; }
+.slip::after { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 1.5px solid var(--ink); clip-path: inset(0 100% 0 0); pointer-events: none; z-index: 1; transition: clip-path .5s var(--ease-out); }
+.slip.inked::before { opacity: 0; transition: opacity .3s .3s; }
+.slip.inked::after { clip-path: inset(0 0 0 0); border-color: var(--rule-2); }
+.slip.destroy::before { border-color: color-mix(in oklch, var(--stamp) 55%, transparent); }
+.slip.struck { opacity: .72; }
+.slip.struck::before { border-style: solid; border-color: var(--rule); }
+.slip.arrive { animation: arrive .36s var(--ease-out); }
+@keyframes arrive { from { opacity: 0; transform: scale(.975); } }
+
+.slip-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.slip-top h3 { font-size: var(--t-md); }
+.who { color: var(--ink-2); font-size: var(--t-sm); }
+.who b { color: var(--pencil); font-weight: 500; }
+.slip-top .meta { order: -1; flex-basis: 100%; color: var(--ink-3); font-size: var(--t-xs); margin-block-end: -4px; }
+
+table.diff { width: 100%; border-collapse: collapse; font-size: var(--t-sm); }
+table.diff th { text-align: start; font-weight: 500; font-size: var(--t-xs); color: var(--ink-3); padding: 0 12px 6px 0; }
+table.diff td { padding: 8px 12px 8px 0; border-block-start: 1px solid var(--rule); vertical-align: baseline; }
+table.diff td:last-child, table.diff th:last-child { padding-inline-end: 0; text-align: end; }
+.was { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--ink-3); }
+.to { color: var(--pencil); font-weight: 500; padding: 1px 6px; margin-inline-start: 4px; border-radius: 3px; background: var(--pencil-wash); text-decoration: underline 1.5px dashed var(--pencil-line); text-underline-offset: 4px; transition: color .3s, background-color .3s; }
+.inked .to { color: var(--ink); background: var(--well); text-decoration-style: solid; text-decoration-color: var(--rule-2); }
+.gone, .to { -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.gone { color: var(--stamp); font-weight: 500; padding: 1px 6px; border-radius: 3px; background: var(--stamp-wash); text-decoration: line-through 1.5px var(--stamp); }
+.struck .to, .struck .gone { background: none; color: var(--ink-3); text-decoration: line-through; }
+table.diff td:nth-child(2), table.diff td:last-child { white-space: nowrap; }
+
+.reason { border-inline-start: 2px dashed var(--pencil-line); padding-inline-start: 12px; color: var(--ink-2); font-size: var(--t-sm); max-width: 44rem; }
+.reason span { display: block; font-size: var(--t-xs); color: var(--ink-3); }
+.checks { display: flex; gap: 16px; flex-wrap: wrap; font-size: var(--t-xs); color: var(--ink-2); }
+.checks span::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); margin-inline-end: 6px; vertical-align: middle; }
+.checks span.clock::before { background: none; border: 1px solid var(--ink-3); }
+.slip-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.slip-actions .note { font-size: var(--t-xs); color: var(--stamp); }
+.outcome { font-size: var(--t-sm); font-weight: 500; }
+.outcome .mono { color: var(--ink-2); font-weight: 400; }
+
+/* ---------- Pipeline: one bar, drawn to scale ---------- */
+.pipe { display: grid; grid-template-columns: minmax(0, 1fr) 13rem; gap: 20px 32px; background: var(--sheet); border-radius: var(--r-2); box-shadow: inset 0 0 0 1px var(--rule); padding: 20px; }
+.bar-scale { display: flex; gap: 3px; height: 40px; }
+.seg { min-width: 0; border-radius: 3px; background: var(--ink); display: flex; }
+.seg:nth-child(1) { opacity: .28; } .seg:nth-child(2) { opacity: .45; } .seg:nth-child(3) { opacity: .65; }
+.seg .leave { margin-inline-start: auto; height: 100%; border-radius: 0 3px 3px 0; background: var(--hatch), var(--pencil-wash); outline: 1.5px dashed var(--pencil); outline-offset: -1.5px; }
+.seg.with-leave { background: none; opacity: 1; gap: 0; }
+.seg.with-leave .stay { height: 100%; background: var(--ink); border-radius: 3px 0 0 3px; }
+.legend { display: flex; gap: 3px; margin-block-start: 10px; }
+.legend div { min-width: 0; display: grid; gap: 2px; align-content: start; }
+.legend .name { font-size: var(--t-xs); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.legend .val { font-size: var(--t-lg); font-weight: 500; letter-spacing: -0.01em; }
+.legend .n { font-size: var(--t-xs); color: var(--ink-3); }
+.legend .delta { font-size: var(--t-xs); color: var(--pencil); font-weight: 500; }
+.outcomes { display: grid; gap: 16px; align-content: start; border-inline-start: 1px solid var(--rule); padding-inline-start: 24px; }
+.outcomes .name { font-size: var(--t-xs); color: var(--ink-2); display: block; }
+.outcomes .val { font-size: var(--t-xl); font-weight: 500; letter-spacing: -0.02em; line-height: 1.2; display: block; }
+.outcomes .delta { font-size: var(--t-xs); color: var(--pencil); font-weight: 500; display: block; }
+.outcomes .lost .val { color: var(--ink-2); }
+
+/* ---------- Ledger ---------- */
+.ledger { width: 100%; border-collapse: collapse; background: var(--sheet); border-radius: var(--r-2); box-shadow: inset 0 0 0 1px var(--rule); overflow: hidden; }
+.ledger th { text-align: start; font-size: var(--t-xs); font-weight: 500; color: var(--ink-3); padding: 10px 14px; border-block-end: 1px solid var(--rule); }
+.ledger td { padding: 10px 14px; border-block-end: 1px solid var(--rule); vertical-align: baseline; }
+.ledger tr:last-child td { border-block-end: 0; }
+.ledger .act { font-family: var(--mono); font-size: var(--t-xs); color: var(--ink-2); }
+.state { font-size: var(--t-xs); font-weight: 500; white-space: nowrap; }
+.state.wait { color: var(--pencil); }
+.state.done { color: var(--ok); }
+.state.rej { color: var(--ink-3); }
+.ledger tr.fresh td { animation: fresh 1.6s var(--ease-out); }
+@keyframes fresh { from { background: var(--pencil-wash); } }
+
+/* ---------- Agent column ---------- */
+aside.agent { border-inline-start: 1px solid var(--rule); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: calc(100dvh - 52px); position: sticky; top: 52px; background: var(--paper); }
+.agent-head { padding: 16px 18px 12px; border-block-end: 1px solid var(--rule); display: grid; gap: 4px; }
+.agent-head .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.agent-head h2 { font-size: var(--t-md); }
+.disclose { font-size: var(--t-xs); color: var(--ink-2); }
+.disclose b { font-weight: 500; color: var(--pencil); }
+.log { overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 20px; overscroll-behavior: contain; }
+.turn { display: grid; gap: 6px; }
+.turn .by { font-size: var(--t-xs); color: var(--ink-3); display: flex; gap: 8px; }
+.turn .by b { font-weight: 500; color: var(--ink-2); }
+.turn.agent .by b { color: var(--pencil); }
+.turn p { font-size: var(--t-md); line-height: 1.55; }
+.turn.agent p { border-inline-start: 2px solid var(--pencil-line); padding-inline-start: 12px; }
+.steps { list-style: none; margin: 0; padding: 0 0 0 14px; display: grid; gap: 4px; font-size: var(--t-xs); color: var(--ink-2); border-inline-start: 1px dashed var(--rule-2); margin-inline-start: 1px; }
+.steps li { display: flex; gap: 8px; }
+.steps li .mono { color: var(--ink-3); font-size: 1em; }
+.steps li.drafted { color: var(--pencil); font-weight: 500; }
+.steps li.live::after { content: "…"; }
+.turn .link { justify-self: start; font-size: var(--t-sm); color: var(--pencil); font-weight: 500; background: none; border: 0; padding: 6px 0; cursor: pointer; text-align: start; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.composer { border-block-start: 1px solid var(--rule); padding: 12px 18px 16px; display: grid; gap: 8px; }
+.composer textarea { width: 100%; min-height: 76px; resize: vertical; border: 1px solid var(--rule-2); border-radius: var(--r-2); background: var(--sheet); padding: 10px 12px; font-size: var(--t-md); line-height: 1.5; }
+.composer textarea::placeholder { color: var(--ink-3); }
+.composer .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.composer .hint { font-size: var(--t-xs); color: var(--ink-3); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1180px) {
+  .shell { grid-template-columns: 200px minmax(0, 1fr); }
+  aside.agent { position: fixed; inset-block: 52px 0; inset-inline-end: 0; width: min(400px, 100%); z-index: 10; box-shadow: var(--lift); translate: 100% 0; visibility: hidden; transition: translate .28s var(--ease-out), visibility 0s .28s; height: auto; }
+  [dir="rtl"] aside.agent { translate: -100% 0; }
+  aside.agent.open { translate: 0 0; visibility: visible; transition: translate .28s var(--ease-out); }
+  .only-narrow { display: inline-flex; }
+}
+@media (max-width: 860px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  nav.side { display: none; }
+  nav.side.open { display: flex; position: fixed; inset-block: 52px 0; inset-inline-start: 0; width: 240px; background: var(--paper); z-index: 10; box-shadow: var(--lift); }
+  .pipe { grid-template-columns: minmax(0, 1fr); }
+  .outcomes { border-inline-start: 0; padding-inline-start: 0; border-block-start: 1px solid var(--rule); padding-block-start: 16px; grid-template-columns: 1fr 1fr; }
+  .sample { display: none; }
+}
+@media (max-width: 560px) {
+  .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .btn { min-height: 44px; }
+  .reason { font-size: var(--t-md); }
+  .ledger .hide-sm { display: none; }
+  table.diff .hide-sm { display: none; }
+  .slip { padding: 16px; }
+  .slip-top .meta { margin-inline-start: 0; width: 100%; }
+  .btn.label-short .long { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition-duration: 0s !important; transition-delay: 0s !important; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="bar">
+    <button class="btn quiet only-narrow" id="menuBtn" aria-expanded="false" aria-controls="side">Menu</button>
+    <div class="mark">
+      <svg viewBox="0 0 42 42" aria-hidden="true"><path fill="var(--brand)" d="M21 1 39.7 11.8v18.4L21 41 2.3 30.2V11.8z"/><path fill="var(--sheet)" d="M14 10h6v17h11v5H14z"/></svg>
+      Luminara
+    </div>
+    <span class="sample" title="Every record on this page is invented for the prototype">Sample data</span>
+    <span class="grow"></span>
+    <button class="btn quiet" id="themeBtn" aria-label="Switch colour theme">Theme</button>
+    <button class="btn only-narrow" id="agentBtn" aria-expanded="false" aria-controls="agent">Agent</button>
+  </header>
+
+  <nav class="side" id="side" aria-label="Main">
+    <a href="#" aria-current="page">Desk <span class="count wait" id="navWait">2 to sign</span></a>
+    <a href="#">Leads <span class="count num">165</span></a>
+    <a href="#">Quotes <span class="count num">12</span></a>
+    <a href="#">Activities <span class="count num">9</span></a>
+    <a href="#">Mail <span class="count num">4</span></a>
+    <div class="sep"></div>
+    <span class="label">Contacts</span>
+    <a href="#">Persons</a>
+    <a href="#">Organizations</a>
+    <a href="#">Products</a>
+    <div class="sep"></div>
+    <a href="#ledger">Agent ledger</a>
+    <a href="#">Settings</a>
+  </nav>
+
+  <main id="main">
+    <div class="head">
+      <span class="date"><time datetime="2026-11-15">Sunday 15 November</time> · Mara Chen, Sales Manager</span>
+      <h1 id="title">Two changes wait for your signature</h1>
+      <p>The agent drafted them from your request at 09:12. Nothing in the CRM changes until you sign.</p>
+    </div>
+
+    <section aria-labelledby="h-sign">
+      <h2 id="h-sign">To sign <span class="aside">Each call closes unrun after 72 hours</span></h2>
+      <div class="slips" id="slips">
+
+        <article class="slip" id="slip-2291" data-call="2291" data-kind="move" aria-labelledby="t-2291">
+          <div class="slip-top">
+            <h3 id="t-2291">Move 3 leads to Won</h3>
+            <span class="who">drafted by <b>Agent</b> as you</span>
+            <span class="meta mono">call #2291 · <time datetime="2026-11-15T09:14">09:14</time> · closes in 2 d 21 h</span>
+          </div>
+          <table class="diff">
+            <thead><tr><th scope="col">Lead</th><th scope="col" class="hide-sm">Owner</th><th scope="col">Stage</th><th scope="col">Value</th></tr></thead>
+            <tbody>
+              <tr><td>#3961 Harbour Freight — Coastal fleet renewal</td><td class="hide-sm">Mara Chen</td><td><span class="was">Negotiation</span> <span class="to">Won</span></td><td class="num">$48,000</td></tr>
+              <tr><td>#3975 Coastline Cold Storage — Dock sensors</td><td class="hide-sm">Ivo Petrak</td><td><span class="was">Negotiation</span> <span class="to">Won</span></td><td class="num">$22,500</td></tr>
+              <tr><td>#3988 Westpoint Bakery — POS refresh</td><td class="hide-sm">Mara Chen</td><td><span class="was">Negotiation</span> <span class="to">Won</span></td><td class="num">$6,200</td></tr>
+            </tbody>
+          </table>
+          <p class="reason"><span>The agent's reason (its own words, not checked)</span>“All three returned signed order forms by email between 11 and 13 November. Mara asked: log this week's signed orders as won.”</p>
+          <div class="checks"><span>Records unchanged since the request</span><span>Your role may edit these leads</span></div>
+          <div class="slip-actions">
+            <button class="btn sign" data-do="sign">Sign and run</button>
+            <button class="btn" data-do="reject">Reject</button>
+          </div>
+        </article>
+
+        <article class="slip destroy" id="slip-2290" data-call="2290" data-kind="delete" aria-labelledby="t-2290">
+          <div class="slip-top">
+            <h3 id="t-2290">Delete 1 lead</h3>
+            <span class="who">drafted by <b>Agent</b> as you</span>
+            <span class="meta mono">call #2290 · <time datetime="2026-11-15T09:13">09:13</time> · closes in 2 d 21 h</span>
+          </div>
+          <table class="diff">
+            <thead><tr><th scope="col">Lead</th><th scope="col" class="hide-sm">Person</th><th scope="col">Activities</th><th scope="col">Value</th></tr></thead>
+            <tbody>
+              <tr><td><span class="gone">#4182 Natarajan — Warehouse scanners</span></td><td class="hide-sm">Priya Natarajan</td><td class="num">0</td><td class="num">$9,800</td></tr>
+              <tr><td>Kept: #4177 Priya Natarajan — Warehouse scanners</td><td class="hide-sm">Priya Natarajan</td><td class="num">6</td><td class="num">$9,800</td></tr>
+            </tbody>
+          </table>
+          <p class="reason"><span>The agent's reason (its own words, not checked)</span>“#4182 has the same person, email and value as #4177 and no activities. Mara asked: clean up duplicate leads.”</p>
+          <div class="checks"><span>Records unchanged since the request</span><span class="clock">Deleting cannot be undone</span></div>
+          <div class="slip-actions">
+            <button class="btn danger" data-do="arm" aria-pressed="false">Delete #4182</button>
+            <button class="btn" data-do="reject">Reject</button>
+            <span class="note" aria-live="polite"></span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-pipe">
+      <h2 id="h-pipe">Pipeline <span class="aside" id="pipeNote">Drawn to scale · the dashed part is what signing #2291 would move</span></h2>
+      <div class="pipe" id="pipe"></div>
+    </section>
+
+    <section aria-labelledby="h-ledger" id="ledger">
+      <h2 id="h-ledger">Agent ledger <span class="aside">Every call the agent made today, as receipts</span></h2>
+      <table class="ledger">
+        <thead><tr><th scope="col">Time</th><th scope="col">Call</th><th scope="col" class="hide-sm">Action</th><th scope="col">What</th><th scope="col">State</th></tr></thead>
+        <tbody id="ledgerBody">
+          <tr><td class="num">09:14</td><td class="mono">#2291</td><td class="act hide-sm">leads_move_stage</td><td>3 leads → Won</td><td><span class="state wait">Waiting for you</span></td></tr>
+          <tr><td class="num">09:13</td><td class="mono">#2290</td><td class="act hide-sm">leads_delete</td><td>#4182 Natarajan</td><td><span class="state wait">Waiting for you</span></td></tr>
+          <tr><td class="num">09:12</td><td class="mono">#2289</td><td class="act hide-sm">leads_get</td><td>Read #4182</td><td><span class="state done">Completed</span></td></tr>
+          <tr><td class="num">09:12</td><td class="mono">#2288</td><td class="act hide-sm">leads_get</td><td>Read #4177</td><td><span class="state done">Completed</span></td></tr>
+          <tr><td class="num">09:12</td><td class="mono">#2287</td><td class="act hide-sm">leads_search</td><td>“Natarajan” · 2 found</td><td><span class="state done">Completed</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <aside class="agent" id="agent" aria-labelledby="h-agent">
+    <div class="agent-head">
+      <div class="row">
+        <h2 id="h-agent">Agent</h2>
+        <button class="btn quiet" id="newBtn">New conversation</button>
+      </div>
+      <p class="disclose">You are talking to an <b>AI model</b> (claude-opus-5-5). It works as you, with Sales Manager permissions. Deleting, and moving more than one lead, wait for a signature.</p>
+    </div>
+    <div class="log" id="log" aria-live="polite" aria-relevant="additions">
+      <div class="turn">
+        <span class="by"><b>Mara Chen</b><time class="num">09:12</time></span>
+        <p>Clean up duplicate leads for Natarajan, and log this week's signed orders as won.</p>
+      </div>
+      <div class="turn agent">
+        <span class="by"><b>Agent</b><time class="num">09:14</time></span>
+        <ol class="steps" aria-label="Steps the agent took">
+          <li><span class="mono">#2287</span> Searched leads for “Natarajan”, 2 found</li>
+          <li><span class="mono">#2288</span> Read #4177</li>
+          <li><span class="mono">#2289</span> Read #4182</li>
+          <li class="drafted"><span class="mono">#2290</span> Drafted: delete #4182</li>
+          <li class="drafted"><span class="mono">#2291</span> Drafted: move 3 leads to Won</li>
+        </ol>
+        <p>#4182 duplicates #4177 and has no activities, so I drafted a delete for it. Three leads in Negotiation have signed order forms in email; I drafted moving them to Won. Both wait on your Desk.</p>
+        <button class="link" data-jump="slips">Review the 2 drafts</button>
+      </div>
+    </div>
+    <form class="composer" id="composer">
+      <label for="msg" class="sr">Ask the agent to find or change something</label>
+      <textarea id="msg" maxlength="4000" placeholder="Ask the agent to find or change something…">Create a lead for Dana Okafor, fleet renewal, worth 2,500</textarea>
+      <div class="row">
+        <span class="hint">Enter sends · Shift+Enter adds a line</span>
+        <button class="btn sign" id="sendBtn" type="submit">Send</button>
+      </div>
+    </form>
+  </aside>
+</div>
+
+<p class="sr" id="announce" aria-live="assertive"></p>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const now = () => new Date().toTimeString().slice(0, 5);
+  const announce = t => { $('#announce').textContent = ''; requestAnimationFrame(() => $('#announce').textContent = t); };
+  let nextCall = 2292;
+
+  /* Pipeline strip — sample figures, $ thousands. pending = value a waiting call would move. */
+  const stages = [
+    { name: 'New', n: 58, v: 412 }, { name: 'Follow Up', n: 47, v: 388 }, { name: 'Prospect', n: 39, v: 356 },
+    { name: 'Negotiation', n: 21, v: 402, out: 76.7 }, { name: 'Won', n: 31, v: 284, in: 76.7, note: 'this month' },
+    { name: 'Lost', n: 18, v: 97, cls: 'lost', note: 'this month' },
+  ];
+  const money = k => k >= 1000 ? `$${(k / 1000).toFixed(2)}M` : `$${Math.round(k * 10) / 10}k`;
+  function drawStrip() {
+    const open = stages.slice(0, 4), won = stages[4], lost = stages[5];
+    const total = open.reduce((a, s) => a + s.v, 0), count = open.reduce((a, s) => a + s.n, 0);
+    const bar = open.map(s => s.out
+      ? `<div class="seg with-leave" style="flex-grow:${s.v}"><span class="stay" style="flex-grow:${s.v - s.out}"></span><span class="leave" style="flex-grow:${s.out}"></span></div>`
+      : `<div class="seg" style="flex-grow:${s.v}"></div>`).join('');
+    const legend = open.map(s => `<div style="flex:${s.v} 1 0">
+        <span class="name">${s.name}</span><span class="val num">${money(s.v)}</span>
+        <span class="n num">${s.n} leads</span>${s.out ? `<span class="delta num">−${money(s.out)} if signed</span>` : ''}</div>`).join('');
+    $('#pipe').innerHTML = `
+      <div>
+        <div class="bar-scale" role="img" aria-label="Open pipeline ${money(total)} across ${count} leads: ${open.map(s => `${s.name} ${money(s.v)}`).join(', ')}${open[3].out ? `. Signing call 2291 would move ${money(open[3].out)} from Negotiation to Won` : ''}">${bar}</div>
+        <div class="legend">${legend}</div>
+      </div>
+      <div class="outcomes">
+        <div><span class="name">Won this month · ${won.n} leads</span><span class="val num">${money(won.v)}</span>${won.in ? `<span class="delta num">${money(won.v + won.in)} if you sign #2291</span>` : ''}</div>
+        <div class="lost"><span class="name">Lost this month · ${lost.n} leads</span><span class="val num">${money(lost.v)}</span></div>
+      </div>`;
+  }
+  drawStrip();
+
+  function updateCount() {
+    const n = document.querySelectorAll('.slip:not(.inked):not(.struck)').length;
+    const words = ['No changes wait', 'One change waits', 'Two changes wait', 'Three changes wait'];
+    $('#title').textContent = n ? `${words[n] || n + ' changes wait'} for your signature` : 'Nothing waits for your signature';
+    $('#navWait').textContent = n ? `${n} to sign` : '';
+  }
+
+  function ledgerRow(call, action, what, cls, state) {
+    const tr = document.createElement('tr');
+    tr.className = 'fresh';
+    tr.innerHTML = `<td class="num">${now()}</td><td class="mono">#${call}</td><td class="act hide-sm">${action}</td><td>${what}</td><td><span class="state ${cls}">${state}</span></td>`;
+    $('#ledgerBody').prepend(tr);
+  }
+  function setLedgerState(call, cls, state) {
+    [...document.querySelectorAll('#ledgerBody tr')].forEach(tr => {
+      if (tr.children[1].textContent === '#' + call) tr.children[4].innerHTML = `<span class="state ${cls}">${state}</span>`;
+    });
+  }
+
+  function finish(slip, inked, text) {
+    slip.classList.add(inked ? 'inked' : 'struck');
+    slip.querySelector('.checks')?.remove();
+    const acts = slip.querySelector('.slip-actions');
+    acts.innerHTML = `<p class="outcome">${text} <span class="mono">· ${now()}</span></p>`;
+    const call = slip.dataset.call;
+    setLedgerState(call, inked ? 'done' : 'rej', inked ? 'Signed · completed' : 'Rejected');
+    if (slip.dataset.kind === 'move') {
+      const neg = stages[3], won = stages[4];
+      if (inked) { neg.v -= neg.out; neg.n -= 3; won.v += won.in; won.n += 3; }
+      delete neg.out; delete won.in; drawStrip();
+      $('#pipeNote').textContent = 'Drawn to scale';
+    }
+    updateCount();
+    announce(`Call ${call}: ${text}`);
+  }
+
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-do], [data-jump]');
+    if (!b) return;
+    if (b.dataset.jump) { const t = $('#' + b.dataset.jump); t.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); t.querySelector('.slip:not(.inked):not(.struck) button')?.focus({ preventScroll: true }); closeAgent(); return; }
+    const slip = b.closest('.slip');
+    const act = b.dataset.do;
+    if (act === 'sign') finish(slip, true, slip.dataset.kind === 'create' ? 'Kept. Marked as reviewed by you.' : 'Signed. The action ran and completed.');
+    if (act === 'reject') finish(slip, false, slip.dataset.kind === 'create' ? 'Removed. The lead was deleted.' : 'Rejected. Nothing was changed.');
+    if (act === 'arm') {
+      const note = slip.querySelector('.note');
+      if (b.getAttribute('aria-pressed') === 'true') { finish(slip, true, 'Signed. Lead #4182 was deleted.'); return; }
+      b.setAttribute('aria-pressed', 'true');
+      b.textContent = 'Confirm: delete permanently';
+      note.textContent = 'Press again to confirm. Esc cancels.';
+      const cancel = () => { b.setAttribute('aria-pressed', 'false'); b.textContent = 'Delete #4182'; note.textContent = ''; };
+      b.addEventListener('keydown', ev => { if (ev.key === 'Escape') cancel(); }, { once: true });
+      b.addEventListener('blur', cancel, { once: true });
+    }
+  });
+
+  /* Agent conversation — scripted for the prototype. */
+  const log = $('#log'), msg = $('#msg'), send = $('#sendBtn');
+  let running = null;
+  function turn(cls, who, html) {
+    const d = document.createElement('div');
+    d.className = 'turn ' + cls;
+    d.innerHTML = `<span class="by"><b>${who}</b><time class="num">${now()}</time></span>${html}`;
+    log.append(d); log.scrollTop = log.scrollHeight;
+    return d;
+  }
+  function stop() {
+    clearTimeout(running?.t);
+    running?.li?.classList.remove('live');
+    if (running?.li) running.li.textContent = 'Stopped by you before it ran';
+    running = null; send.textContent = 'Send'; send.classList.add('sign'); msg.disabled = false;
+  }
+  $('#composer').addEventListener('submit', e => {
+    e.preventDefault();
+    if (running) { stop(); return; }
+    const text = msg.value.trim();
+    if (!text) return;
+    turn('', 'Mara Chen', `<p></p>`).querySelector('p').textContent = text;
+    msg.value = ''; msg.disabled = true;
+    send.textContent = 'Stop'; send.classList.remove('sign');
+    const a = turn('agent', 'Agent', `<ol class="steps" aria-label="Steps the agent took"><li class="live">Searching leads for “Okafor”</li></ol>`);
+    const li = a.querySelector('li');
+    running = { li, t: setTimeout(() => {
+      li.classList.remove('live'); li.innerHTML = `<span class="mono">#${nextCall++}</span> Searched leads for “Okafor”, none found`;
+      const li2 = document.createElement('li'); li2.className = 'drafted';
+      const call = nextCall++;
+      li2.innerHTML = `<span class="mono">#${call}</span> Created #4183 Dana Okafor — Fleet renewal`;
+      a.querySelector('.steps').append(li2);
+      a.insertAdjacentHTML('beforeend', `<p>Created the lead in New with a value of $2,500. Creating does not need a signature for your role, so it ran; it is marked unreviewed until you look at it.</p><button class="link" data-jump="slips">Review lead #4183</button>`);
+      addCreated(call);
+      ledgerRow(call, 'leads_create', '#4183 Dana Okafor', 'done', 'Completed · unreviewed');
+      running = null; send.textContent = 'Send'; send.classList.add('sign'); msg.disabled = false;
+      log.scrollTop = log.scrollHeight;
+    }, 1400) };
+  });
+  msg.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#composer').requestSubmit(); } });
+  $('#newBtn').addEventListener('click', () => { log.innerHTML = ''; msg.focus(); });
+
+  function addCreated(call) {
+    const el = document.createElement('article');
+    el.className = 'slip arrive'; el.dataset.call = call; el.dataset.kind = 'create';
+    el.innerHTML = `<div class="slip-top"><h3>New lead, not yet reviewed</h3><span class="who">created by <b>Agent</b> as you</span><span class="meta mono">call #${call} · ${now()}</span></div>
+      <table class="diff"><thead><tr><th scope="col">Lead</th><th scope="col" class="hide-sm">Person</th><th scope="col">Stage</th><th scope="col">Value</th></tr></thead>
+      <tbody><tr><td><span class="to">#4183 Dana Okafor — Fleet renewal</span></td><td class="hide-sm">Dana Okafor</td><td>New</td><td class="num">$2,500</td></tr></tbody></table>
+      <div class="slip-actions"><button class="btn sign" data-do="sign">Mark reviewed</button><button class="btn" data-do="reject">Delete it</button></div>`;
+    $('#slips').prepend(el);
+    updateCount();
+  }
+
+  /* Shell controls */
+  const agent = $('#agent'), agentBtn = $('#agentBtn'), side = $('#side'), menuBtn = $('#menuBtn');
+  function closeAgent() { agent.classList.remove('open'); agentBtn.setAttribute('aria-expanded', 'false'); }
+  agentBtn.addEventListener('click', () => { const o = agent.classList.toggle('open'); agentBtn.setAttribute('aria-expanded', o); if (o) msg.focus(); });
+  menuBtn.addEventListener('click', () => { const o = side.classList.toggle('open'); menuBtn.setAttribute('aria-expanded', o); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (agent.classList.contains('open')) { closeAgent(); agentBtn.focus(); } side.classList.remove('open'); menuBtn.setAttribute('aria-expanded', 'false'); } });
+  $('#themeBtn').addEventListener('click', () => {
+    const r = document.documentElement, dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme = dark ? 'light' : 'dark';
+  });
+})();
+</script>
+</body>
+</html>

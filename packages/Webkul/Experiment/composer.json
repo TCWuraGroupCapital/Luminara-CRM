@@ -1,0 +1,20 @@
+{
+    "name": "krayin/laravel-experiment",
+    "description": "Luminara CRM A/B Testing & Experimentation Module",
+    "license": "MIT",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Webkul\\Experiment\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Webkul\\Experiment\\Providers\\ExperimentServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "minimum-stability": "dev"
+}

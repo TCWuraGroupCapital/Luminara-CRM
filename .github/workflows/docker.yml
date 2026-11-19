@@ -1,0 +1,173 @@
+name: Docker Smoke & Security Tests
+
+on:
+  push:
+    branches: [main, '2.2']
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: luminara_crm_ci
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping -uroot -proot" --health-interval=10s --health-timeout=5s --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Build production image
+        run: docker build --target production -f docker/Dockerfile -t luminara-crm:ci .
+
+      - name: Scan production image with Trivy
+        uses: aquasecurity/trivy-action@0.30.0
+        with:
+          image-ref: luminara-crm:ci
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+
+      - name: Verify clean production bootstrap
+        run: |
+          docker run --rm --entrypoint sh -e APP_ENV=production -e APP_DEBUG=false luminara-crm:ci -c '
+            test ! -f storage/installed &&
+            test ! -f bootstrap/cache/packages.php &&
+            php -m | grep -Fxq sodium &&
+            php -m | grep -Fxq redis &&
+            php -m | grep -Fxq pcntl &&
+            php artisan --version &&
+            php artisan schedule:list
+          '
+
+      - name: Reject unsafe production startup (missing APP_KEY or APP_DEBUG=true)
+        run: |
+          if docker run --rm -e APP_ENV=production -e APP_DEBUG=false luminara-crm:ci true; then
+            echo 'Production started without an APP_KEY.'
+            exit 1
+          fi
+          if docker run --rm -e APP_ENV=production -e APP_DEBUG=true -e APP_KEY=base64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY= luminara-crm:ci true; then
+            echo 'Production started with APP_DEBUG=true.'
+            exit 1
+          fi
+
+      - name: Seed initial schema and verify default admin123 rejection
+        env:
+          APP_KEY: base64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+        run: |
+          docker run --rm \
+            --add-host=host.docker.internal:host-gateway \
+            -e APP_ENV=local \
+            -e APP_DEBUG=false \
+            -e APP_KEY \
+            -e DB_CONNECTION=mysql \
+            -e DB_HOST=host.docker.internal \
+            -e DB_PORT=3306 \
+            -e DB_DATABASE=luminara_crm_ci \
+            -e DB_USERNAME=root \
+            -e DB_PASSWORD=root \
+            luminara-crm:ci true
+          if docker run --rm \
+            --add-host=host.docker.internal:host-gateway \
+            -e APP_ENV=production \
+            -e APP_DEBUG=false \
+            -e APP_KEY \
+            -e DB_CONNECTION=mysql \
+            -e DB_HOST=host.docker.internal \
+            -e DB_PORT=3306 \
+            -e DB_DATABASE=luminara_crm_ci \
+            -e DB_USERNAME=root \
+            -e DB_PASSWORD=root \
+            luminara-crm:ci true; then
+            echo 'Production started while active user still had default admin123 password.'
+            exit 1
+          fi
+
+      - name: Provision hardened enterprise admin account
+        env:
+          APP_KEY: base64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+          LUMINARA_ADMIN_PASSWORD: LuminaraProd#2026!Secure
+        run: |
+          docker run --rm \
+            --entrypoint php \
+            --add-host=host.docker.internal:host-gateway \
+            -e APP_ENV=production \
+            -e APP_DEBUG=false \
+            -e APP_KEY \
+            -e LUMINARA_ADMIN_PASSWORD \
+            -e DB_CONNECTION=mysql \
+            -e DB_HOST=host.docker.internal \
+            -e DB_PORT=3306 \
+            -e DB_DATABASE=luminara_crm_ci \
+            -e DB_USERNAME=root \
+            -e DB_PASSWORD=root \
+            luminara-crm:ci artisan luminara:provision --admin-email=ops@luminaradigital.example --admin-name="Luminara Ops" --force
+
+      - name: Start stateless production service and verify HTTP + Cloudflare headers
+        env:
+          APP_KEY: base64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+        run: |
+          docker run -d --name luminara-crm-ci \
+            -p 8080:80 \
+            --add-host=host.docker.internal:host-gateway \
+            -e APP_ENV=production \
+            -e APP_DEBUG=false \
+            -e APP_KEY \
+            -e APP_URL=https://crm.luminaradigital.example \
+            -e TRUSTED_PROXIES=127.0.0.1,172.16.0.0/12 \
+            -e DB_CONNECTION=mysql \
+            -e DB_HOST=host.docker.internal \
+            -e DB_PORT=3306 \
+            -e DB_DATABASE=luminara_crm_ci \
+            -e DB_USERNAME=root \
+            -e DB_PASSWORD=root \
+            luminara-crm:ci
+          timeout 60 sh -c 'until curl -fsS http://127.0.0.1:8080/up > /dev/null; do sleep 1; done'
+          curl -fsSI http://127.0.0.1:8080/up | grep -Fi 'X-Content-Type-Options: nosniff'
+          curl -fsSI http://127.0.0.1:8080/up | grep -Fi 'Referrer-Policy: strict-origin-when-cross-origin'
+          curl -fsSI http://127.0.0.1:8080/up | grep -Fi 'Permissions-Policy:'
+          curl -fsSI http://127.0.0.1:8080/up | grep -Fi 'X-Frame-Options: SAMEORIGIN'
+          curl -fsSI http://127.0.0.1:8080/up | grep -Fi "Content-Security-Policy: frame-ancestors 'self'"
+          test "$(curl -fsSI -H 'X-Forwarded-Proto: https' http://127.0.0.1:8080/up | grep -ci 'Strict-Transport-Security' || true)" = "0"
+          docker exec luminara-crm-ci curl -fsSI -H 'X-Forwarded-Proto: https' http://127.0.0.1/up | grep -Fi 'Strict-Transport-Security: max-age=31536000; includeSubDomains'
+          curl -sI --path-as-is 'http://127.0.0.1:8080/web-forms/forms/1/../../admin/login' | grep -Fi 'X-Frame-Options: SAMEORIGIN'
+          curl -sI --path-as-is 'http://127.0.0.1:8080/tma/../../admin/login' | grep -Fi 'X-Frame-Options: SAMEORIGIN'
+          test "$(curl -sI http://127.0.0.1:8080/web-forms/forms/1/form.html | grep -ci 'X-Frame-Options' || true)" = "0"
+          test "$(curl -sI http://127.0.0.1:8080/tma | grep -ci 'X-Frame-Options' || true)" = "0"
+          test "$(curl -sI 'http://127.0.0.1:8080/tma?v=1.0' | grep -ci '^Content-Security-Policy:' || true)" = "1"
+          test "$(curl -sI 'http://127.0.0.1:8080/tma?v=1.0' | grep -ci '^Permissions-Policy:' || true)" = "1"
+          curl -fsSI 'http://127.0.0.1:8080/tma?v=1.0' | grep -Fi "Content-Security-Policy: frame-ancestors 'self' https://web.telegram.org https://*.telegram.org"
+          curl -fsS http://127.0.0.1:8080/llms.txt | grep -F 'Luminara CRM'
+          curl -fsS http://127.0.0.1:8080/.well-known/agent.json | grep -F '/api/agent/mcp'
+          docker exec luminara-crm-ci php artisan luminara:ledger-seal --json
+          docker exec luminara-crm-ci php artisan luminara:ledger-verify --json | grep -F '"ok":true'
+          LOGIN_HTML="$(docker exec luminara-crm-ci curl -fsS -H 'Host: crm.luminaradigital.example' -H 'CF-Connecting-IP: 203.0.113.50' -H 'X-Forwarded-Proto: https' http://127.0.0.1/admin/login)"
+          printf '%s' "$LOGIN_HTML" | grep -F 'Luminara CRM'
+          printf '%s' "$LOGIN_HTML" | grep -F 'https://crm.luminaradigital.example'
+          ASSET_CSS="$(printf '%s' "$LOGIN_HTML" | grep -Eo '/admin/build/assets/app-[A-Za-z0-9_-]+\.css' | head -n 1)"
+          curl -fsSI "http://127.0.0.1:8080${ASSET_CSS}" | grep -Fi 'Cache-Control: public, max-age=31536000, immutable'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/experiments/assign/nonexistent_smoke_exp)" = "404"
+
+      - name: Capture container logs
+        if: always()
+        run: docker logs luminara-crm-ci || true
+
+      - name: Stop disposable service
+        if: always()
+        run: docker rm -f luminara-crm-ci || true

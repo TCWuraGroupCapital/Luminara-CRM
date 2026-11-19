@@ -1,0 +1,20 @@
+{
+    "name": "luminara/tma",
+    "description": "Luminara CRM Telegram Mini App (TMA), Telegram Bot intake webhook, WebAuthn Passkey signing, and TON Merkle anchor driver",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Webkul\\Tma\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Webkul\\Tma\\Providers\\TmaServiceProvider"
+            ]
+        }
+    }
+}

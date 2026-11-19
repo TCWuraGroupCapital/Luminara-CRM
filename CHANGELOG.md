@@ -1,0 +1,363 @@
+# CHANGELOG for 2.2
+
+This changelog consists of the bug & security fixes and new features being included in the releases listed below.
+
+## **v2.2.9 (Upcoming)**
+
+* [enhancement] Redesigned the admin shell and the Leads board ("Workbench", described in `docs/design.md`, prototype in `docs/prototype/v3/index.html`). The sidebar is now full height with the logo, labelled groups (Overview, Sales, Agent, with Help, Settings and Configuration pinned to the bottom), inline sub-menus for Mail and Contacts, and a collapse button beside the logo; menu items added by other packages fall into the Sales group automatically. The header sits beside the sidebar and keeps its 60px height, so sticky page headers are unaffected. The stock grey palette is tinted toward the brand hue in light and dark, the admin font is IBM Plex Sans (IBM Plex Sans Arabic for `ar` and `fa`), buttons are flatter, and keyboard focus is always visible. The Leads board gains an "Open pipeline, to scale" strip computed from the stage totals the board already loads, stage columns with a colour swatch, count and value, and cleaner lead cards with the value in the card header. New strings are present in all 10 locales. No routes, permissions or data change; the mobile drawer menu keeps its previous layout.
+
+* [enhancement] Added `bin/public-export.sh` and `.public-exclude`. The script builds the public snapshot from a private commit without touching the working tree: it drops the listed private paths, points repository links at the public repository, stops if private wording is still present, and records the result as one commit on a local branch. Nothing is pushed by the script.
+
+* [fixed] Test isolation is now enforced without breaking CI. `phpunit.xml` previously hard-coded `DB_DATABASE=luminara_crm_test` via `<env force="true">`, which was both ineffective locally (Laravel's immutable env repository reads `$_SERVER` first) and would have overridden the `krayin` database CI configures in `.env`. Isolation now lives in `tests/bootstrap.php`: it only redirects an exported `DB_DATABASE=luminara_crm` to `luminara_crm_test` (honouring `LUMINARA_TEST_DB`), and leaves CI untouched. `tests/TestCase.php` fails closed if the live demo database is ever resolved. The demo database was checked afterwards and contains no test residue.
+
+* [feature] Added **Customer Facts Memory** behind `LUMINARA_AGENT_MEMORY` (off by default). When enabled, three `AgentAction` classes — `memory_recall` (read-only), `memory_remember_fact` and `memory_retract_fact` (both `APPROVAL_ALWAYS`) — appear over REST, MCP, the CLI and `/api/agent/context` with no transport code. Facts are short (<=280 characters), human-approved records about a person or organisation, scoped by `bouncer()->scopeToAuthorizedUsers`, filterable by category, expiry, `team`/`private` visibility and status (`active`/`superseded`/`retracted`), and never hard-deleted. Every approved row records the proposing user, the signer and the originating `agent_action_calls.id` through a new `ActionCallContext` scope opened by the executor (dry runs open no scope). Hard validation blocks obvious payment-card, government-identifier and health details before they reach the approval queue, and rejects exact duplicates. The consumer loop is closed: `contacts_get` returns `customer_facts`, and the Assistant injects approved facts into the model as a clearly labelled `<approved_customer_facts>` data block in a user message, never into the system instructions. Recall deliberately uses plain word matching rather than MySQL FULLTEXT so facts remain visible inside a rolled-back dry-run savepoint. With the flag off, the action registry, prompts and responses are byte-for-byte unchanged; the migration only adds an unused table.
+
+* [feature] Bring your own keys from the admin panel. **Settings > Configuration > AI Assistant** takes an API key, model and optional API address for the in-app Assistant and the Desk, and **Settings > Configuration > Telegram** takes a bot token, bot username and webhook secret for `Webkul\Tma`. Keys and secrets are encrypted at rest by `CoreConfigEncryptor`, and all strings are translated into the 10 locales. The server's environment still wins, so `.env`-configured deployments are unchanged. For the Assistant, a `LUMINARA_ASSISTANT_API_KEY` in `.env` makes the key, model and address all come from `.env`, so an address typed into settings can never receive the server's key. For Telegram, each `TELEGRAM_*` value set in `.env` wins over its field. The new `AssistantSettings` and `TelegramSettings` resolvers replace direct `config()` reads.
+
+* [fixed] An empty `LUMINARA_ASSISTANT_BASE_URL` no longer turns off the Anthropic refusal fallback. The empty value was already treated as the default endpoint for the client, but not when deciding whether to send the fallback.
+
+* [enhancement] `.env.example` now lists every key a self-hosted install supplies itself, each blank with a short comment: added `APP_PORT` (read by Compose and `Launch-Luminara-Desktop.cmd`), `LUMINARA_ADMIN_EMAIL` and `LUMINARA_ADMIN_PASSWORD` for `luminara:provision`, and `GOURWEST_WEBHOOK_SECRET`, and replaced the `IMAP_USERNAME`/`IMAP_PASSWORD` sample values with blanks. Added `docs/open-source-release-plan.md`, the secret-scan results and step-by-step plan for publishing the public repository while private deployments keep their own keys.
+
+* [enhancement] The Experiments results table now shows a **95% CI** column: the Newcombe-Wilson confidence interval for each variant's conversion-rate difference against control, in percentage points. The column heading is present in all 10 locales.
+
+* [security] Hardened `Webkul\Agent`, `Webkul\Ledger`, and `Webkul\Tma` boundaries: enforced daily passport call budgets and security audit logging on `dry_run` previews, re-authorized `edited_params` against the approver's scope and concurrent DB drift before signing, pinned resolved DNS IPs via `CURLOPT_RESOLVE` on outbound agent webhooks and TON relayer requests to prevent DNS-rebinding SSRF, gated `ledger_history` and `/api/ledger/blocks/{codeOrHash}/proof` behind MFA session checks, fail-closed `view_permission` defaults, and tombstone ownership checks, hid `canonical_payload` on admin Data Vault JSON feeds, bound TMA WebAuthn challenges 1:1 to pending `call_id`s, required biometric Passkey assertions when approving on Passkey-enrolled accounts, and added server-side CBOR `attestationObject` public-key extraction (`ES256` and `Ed25519`).
+
+* [fixed] Reused existing scoped contacts and assigned contact ownership when `leads_create` creates or matches `person_email`, enforced `.edit` permissions when `contacts_upsert_person` and `contacts_upsert_organization` update existing records, filtered MCP v2 `resources/list` and `prompts/get` by caller permissions, added one-line intake capture on Morning Briefing (`/admin/agent/briefing`) and a live **Stop** control in the Desk's Ask sheet, recorded pre-delete tombstones on activity deletions, and eliminated cold-start InnoDB gap-lock contention and transaction-held HTTP anchor locks in `Webkul\Ledger`.
+
+* [feature] Added the `Webkul\Ledger` verifiable data ledger (`Settings > Other Settings > Data Vault`, `settings.other_settings.ledger` permission). Every CRM record change (leads, contacts, organizations, quotes, products, activities, and pre-delete tombstones) and settled agent action is recorded as an append-only, SHA-256 hash-chained, Ed25519/ES256-signed Data Block (`LUM-<ULID>` receipt code) with secret scrubbing and RFC 8785 canonical JSON. Hourly `luminara:ledger-seal` seals pending blocks into RFC 6962 binary Merkle Epochs through a pluggable `AnchorDriver` (`local` default; `ton` ready), `luminara:ledger-verify` checks chain and Merkle integrity, and `/receipts/{receiptCode}` plus `/api/ledger/blocks/{codeOrHash}/proof` let anyone verify a receipt and its Merkle proof without exposing customer PII.
+
+* [feature] Upgraded `Webkul\Agent` to a 26-action, multi-agent CRM execution platform for Claude Code, Antigravity, Grokbot, and Hermes Agent:
+  * Expanded atomic actions across Leads (`leads_update`), Intake (`intake_capture` plain-text/voice deal capture with scoped contact deduplication), Contacts (`contacts_search`, `contacts_get`, `contacts_upsert_person`, `contacts_upsert_organization`, `contacts_merge_persons`), Products (`products_search`), Quotes (`quotes_search`, `quotes_get`, `quotes_draft` with automatic approval above 15% discount, `quotes_delete`), Activities (`activities_list`, `activities_log_note`, `activities_schedule`, `activities_complete`), Briefing (`briefing_today`), Memory (`playbook_read`, `playbook_propose_rule`), and Ledger (`ledger_verify`, `ledger_history`).
+  * Added savepoint `dry_run` previews (`X-Luminara-Dry-Run: 1`, `dry_run: true`, or `--dry-run`) that return before/after snapshots with zero persisted mutations, **Agent Passports** (`luminara:passport`) with action allowlists, daily call budgets, value ceilings, trust streaks, and SSRF-guarded HMAC-SHA256 outbound webhooks, and **Edit-to-Teach Playbook Memory** (`business_identity`, `pricing_guardrails`, `communication_voice`, `active_priorities`) distilled from inline **Edit & Sign** corrections.
+  * Added MCP v2 `resources/list`, `resources/read`, `prompts/list`, and `prompts/get`, `GET /api/agent/events` incremental polling, `luminara:act <action> --json` CLI execution, `/llms.txt` and `/.well-known/agent.json` agent discovery manifests, server-side **Stop** cancellation in the Assistant, `reviewed_at` **Mark reviewed** tracking, and **Owner Simple Mode** (`Briefing` in the sidebar, `/admin/agent/briefing`) across all 10 locales.
+
+* [feature] Added the `Webkul\Tma` Telegram Mini App & Passkey module (`/tma`, `Settings > Other Settings > Telegram Mini App`). Business owners pair their Telegram account via a one-time code (`https://t.me/<Bot>?start=<CODE>`), review and edit waiting proposals, capture voice/text notes via `/api/tma/intake` or the paired Telegram Bot webhook (`/api/tma/bot/webhook`), sign irreversible actions with WebAuthn biometric Passkeys (`ES256` P-256 and `Ed25519`) sealed directly into `DataBlock` receipts, and inspect their Data Vault head and signing streak in a standalone zero-CDN mobile interface with `Telegram.WebApp.initData` HMAC-SHA256 replay protection and `TonAnchorDriver` readiness across all 10 locales.
+
+* [enhancement] Prepared the project for public release under MIT. The README now explains what Luminara adds to Krayin, what is sent to an AI service, how to run it locally and in production, and its known limits. Added a Luminara Digital copyright line beside Webkul's in `LICENSE`, renamed the Composer package to `luminaradigital/luminara-crm`, and pointed the support and security issue templates at this repository. Both Compose files now pass `LUMINARA_ASSISTANT_API_KEY`, `LUMINARA_ASSISTANT_MODEL` and `LUMINARA_ASSISTANT_BASE_URL` to the app, so the Assistant can be turned on from `.env`. The development setup also takes `APP_TIMEZONE` and `APP_CURRENCY` from `.env`. These keys are documented in `.env.example`.
+
+* [fixed] The agent's `leads_create` now needs `person_email` when it creates a new contact, as the CRM's own contact form does. Without one, Krayin gives every email-less contact of a user the same unique key, so the second such contact failed to save and the call reported "action failed".
+
+* [fixed] The development container now runs pending migrations when it starts on an existing database. Before, only a first install migrated, so pulling new code and rebuilding left new tables missing (the Desk answered 500).
+
+* [fixed] The development container now keeps its `APP_KEY` across rebuilds. Its `.env` lives only inside the container, so each rebuild generated a new key, which signed everyone out and left encrypted settings unreadable. The key is now saved to `storage/app/.app_key` on the storage volume and restored when the container is recreated. A container made before this fix keeps the key it already has.
+
+* [fixed] The Assistant no longer passes an empty `LUMINARA_ASSISTANT_BASE_URL` to the API client as its address. An empty value now means the default Anthropic endpoint.
+
+* [feature] Added the Desk (`Desk` in the sidebar, `agent_desk` permission), the first page for supervising the agent. It shows "N things need your OK" over a 3D model of the default pipeline:
+  * Each deal is a block whose height shows its value. Waiting agent calls are dashed outlines, with dashed ghosts where moved deals would land.
+  * Approving or rejecting a call beside the model sends it through the existing approval checks and then moves the real blocks. A delete takes a full review and a tick to confirm.
+  * Dragging a block to another stage moves the deal through the CRM's own stage update, with Undo. Clicking a block opens the deal.
+  * Narrow screens and devices without WebGL get bars drawn to scale instead of the model.
+  * The page also lists, in plain words, what the agent did for you today, and opens the Assistant in a side sheet.
+  * three.js 0.160.0 is loaded from jsDelivr only on this page.
+  * Agent Approvals now answers JSON requests with the outcome instead of redirecting.
+
+* [enhancement] Redesigned Agent Approvals and the Assistant around "the agent drafts in pencil, people sign in ink" (`docs/design.md`). Waiting calls are proposal slips with a dashed outline: the records before and after (`Negotiation → Won`, a struck-through lead for a delete), the agent's reason labelled as its own unchecked words, when the call closes unrun, and **Sign and run** / **Reject**. Deleting takes a second press to confirm. Every other call is listed below as a ledger of receipts. The Assistant states up front that it is an AI model and names it, shows each call it made as a numbered step with its state, and labels speakers instead of using chat bubbles. The approvals strings are now translated in all 10 locales.
+
+* [security] Agent Approvals no longer lets Vue compile agent-written text (reasons, lead titles) as template expressions. The page body renders with `v-pre`.
+
+* [feature] Added the `Webkul\Agent` module, which lets AI agents operate the CRM through a token API (`/api/agent`) and a Model Context Protocol endpoint (`/api/agent/mcp`). An agent acts as the CRM user its token was issued for (`php artisan luminara:agent-token <email>`), with that user's role permissions and data scope; deleting a lead or moving several leads at once waits for a person to approve it under `Settings > Other Settings > Agent Approvals`, repeated calls with the same `Idempotency-Key` change nothing twice, and every call is written to the security audit log. The approver sees the records a call will change and the agent's stated reason; an approved call does not run if those records changed after the agent asked, a call nobody decides within 72 hours (`agent.approval_ttl_hours`) expires, a call cut off mid-run is reported as interrupted with nothing changed, and results returned over MCP are marked as data so text in a record cannot pose as instructions.
+
+* [feature] Added the in-app Assistant (`Assistant` in the sidebar, `agent_assistant` permission): a person asks in plain words and a model on the Anthropic Messages API (`claude-opus-5-5` by default) works the CRM through the same agent actions, as that person, with their role's permissions and data scope. It is offered only the actions the person may call, changes that need approval wait under Agent Approvals with a link from the reply, every call is recorded as an agent call with no token, record text it reads is fenced as data, and the conversation stays in the person's own session. Configure it with `LUMINARA_ASSISTANT_API_KEY`, optionally `LUMINARA_ASSISTANT_MODEL` and `LUMINARA_ASSISTANT_BASE_URL` for another Messages-compatible service; CRM records the person can read are sent to that service.
+
+* [feature] Added the `Webkul\Gourwest` global multi-country CRM integration module (`Gourwest Global Hub`) with unified 7-region Golden-Record customer profiles (`AU`, `NZ`, `SG`, `MY`, `TH`, `UK`, `CA`), cross-border email/phone deduplication and lossless loyalty point consolidation, 8-system integration telemetry and dead-letter replay (`ERP`, `POS`, `Mobile Ordering`, `Online Ordering`, `Marketing Automation`, `Loyalty Rewards`, `Customer Support`, `BI & Reporting`), HMAC-SHA256 authenticated webhook ingestion (`/api/gourwest/webhooks/{systemCode}`), Two-Gate scoped regional SLA complaint management, `luminara:seed-gourwest`, and `<3s` / `5M`-record service warranty benchmarking (`luminara:benchmark`).
+
+* [enhancement] Added `luminara:load-dataset` to generate or purge a synthetic customer volume, made `luminara:benchmark` sample random customers across the loaded table (`--samples`) and report `dataset_records` and `capacity_verified` so index readiness is no longer presented as measured 5M-record capacity, and replaced the desktop workstation's projected latency figure with real local measurements, and made the published CRM port configurable end to end (`APP_PORT` drives `APP_URL` in `compose.yaml` and the desktop launcher's CRM origin).
+
+* [fixed] Fixed the test suite exhausting the default 128M PHP memory limit by setting `memory_limit` in `phpunit.xml`.
+
+* [feature] Added the `Webkul\Security` enterprise security module with RFC 6238 TOTP multi-factor authentication, hashed single-use recovery codes, monotonic replay protection, append-only security audit logs (`Settings > Other Settings > Security Audit Logs`), transparent at-rest `core_config` secret encryption, distributed login lockout protection, deep `/up` database and cache readiness probes, `luminara:provision`, and signed `luminara:backup` / `luminara:backup-verify` disaster-recovery commands.
+
+* [feature] Added the `Webkul\Experiment` A/B testing and AI/ML lead propensity module (`Settings > Other Settings > A/B Experiments`) with stateless SHA-256 basis-point bucketing, HMAC-authenticated subject attribution tokens, Holm-Bonferroni multiple-testing correction, Sample Ratio Mismatch ($\chi^2$) diagnostics, conjugate Beta win probability, Newcombe-Wilson 95% confidence intervals, `LeadPropensityScorer` `[0, 100]` explainable lead scoring, `@experiment` Blade directive, and WebForm/Lead funnel conversion attribution.
+
+* [security] Fixed unescaped cookie-to-JavaScript script-context injection in Admin header and sidebar templates, enforced TLS peer verification on outbound SMTP connections, enabled encrypted session payloads, restricted trusted proxy header forwarding (`HEADER_X_FORWARDED_PREFIX` excluded), enforced raw request-line Apache `%{THE_REQUEST}` anti-clickjacking headers (`X-Frame-Options` and `CSP frame-ancestors`), hardened Apache `mod_remoteip` with official Cloudflare IPv4/IPv6 CIDR trust lists, and blocked production container startup when `APP_DEBUG=true` or active accounts retain the default `admin123` password.
+
+* [fixed] Fixed SendGrid inbound email parse payload crashes on large attachments, unguarded background `inbound-emails:process` scheduler errors when IMAP is unconfigured, null-user fatal errors in Automation webhook/email actions and Lead reporting/contact views, mass-lead stage transitions omitting `closed_at` and lifecycle events, MagicAI multi-file upload array crashes and OpenRouter vision payload formatting, cache store environment resolution (`CACHE_STORE` with `CACHE_DRIVER` fallback), and Vietnamese CLI/Web installer localization.
+
+* [enhancement] Hardened Docker (`compose.yaml`, `compose.prod.yaml`, `docker/Dockerfile`, `docker/entrypoint.sh`) with `redis` and `pcntl` PHP extensions, `web`/`worker`/`scheduler` container roles, `cloudflared` Zero-Trust Tunnel topology, GitHub Actions CI/CD with Gitleaks and Trivy security scanning, Windows-compatible agent skill validation (`bin/validate-skills.sh`), and consolidated `<x-admin::logo>` branding across all 10 supported locales (`ar`, `en`, `es`, `fa`, `ja`, `ko`, `pt_BR`, `tr`, `vi`, `zh_CN`).
+
+## **v2.2.8 (5th of Nov 2026)**
+
+* [security] Fixed Sercurity issue.
+
+## **v2.2.7 (16th of Oct 2026)**
+
+* [fixed] Fixed a web form submission creating a duplicate contact when the address differed only in case.
+
+* [fixed] Fixed an empty web form submission answering with a server error.
+
+* [feature] Added quotes to Quick Add.
+
+* [fixed] Fixed creating a quote without line items failing with `Undefined array key "items"`. 
+
+* [fixed] Fixed the leads settings control moving when switching between the kanban and table views.
+
+* [feature] Added notifications.
+
+* [feature] Update data filter at dashboard.
+
+* [feature] Mega Search Will open into modal.
+
+* [feature] Added a per-section record count to the mega search. 
+
+* [fixed] Fixed the lookup field's search field.
+
+* [fixed] Fixed saving a contact with the phone left blank answering with a server error.
+
+* [fixed] Fixed picking a lead on a quote leaving the quote unsaveable and unlinked from that lead.
+
+* [fixed] Fixed picking a lead on a quote replacing the existing items instead of adding to them.
+
+* [fixed] Fixed a lead's page erroring when its contact had no phone number.
+
+* [fixed] Fixed removing a quote from a lead failing with no such lead.
+
+* [fixed] Fixed a lead and its quote not holding the same products.
+
+* [fixed] Fixed opening a mail outside drafts erroring under any locale but English.
+
+* [fixed] Added the missing Spanish and Brazilian Portuguese translations.
+
+* [fixed] Fixed the language file test passing while a translation was missing.
+
+* [security] Improved in Security.
+
+## **v2.2.6 (10th of Sept 2026)**
+
+* [security] Improved in Security.
+
+* [feature] Added MariaDB support.
+
+* [feature] Added customizable lead card information. Datagrid columns and Kanban lead card fields can now be chosen per user through new column and card settings components.
+
+* [feature] Added PDF export for dashboard reports, available from the dashboard alongside the existing views.
+
+* [feature] Added Japanese (`ja`) translation for the Admin, Installer, GoogleContact and WebForm packages.
+
+* [feature] Added an associated group column to the users grid in Settings > Users.
+
+* [fixed] Fixed duplicated activity handling across the lead, person, product and warehouse activity controllers by consolidating the shared logic, and added the missing Japanese activity translations.
+
+* [fixed] Fixed the data transfer import queue processing inconsistently, and corrected the form control group rendering used by the import screen.
+
+* [fixed] Fixed the Google Contact settings screen erroring when no account was connected, and added the corresponding translations.
+
+* [fixed] Fixed the mail ACL mapping so email actions are checked against the correct permission.
+
+* [fixed] Fixed people created from a lead being saved with a null `user_id`, which hid them from the person listing for users restricted to group or individual data scope. They are now assigned to the lead owner, falling back to the acting user.
+
+* [fixed] Fixed the stage API resource omitting `lead_pipeline_id`, so stages could not be matched to their pipeline.
+
+* [fixed] Fixed email attachment downloads being blocked by the URL sanitizer middleware.
+
+* [fixed] Added the missing Chinese translations for the users grid's associated group column.
+
+* [fixed] Fixed flaky admin end-to-end tests around organization owner lookup, lead creation and rich-text comment fields.
+
+* [fixed] Fixed creating or updating a lead failing with a server error (HTTP 500) when a product row was submitted without a `product_id`. The request is now rejected with a validation error.
+
+* [fixed] Fixed the expected close date of a lead being cleared when its stage was changed (Kanban drag and drop, the stage bar, won/lost) or another field was edited inline from the lead view.
+
+* [security] Fixed user and role listings not being scoped by the acting user's data scope, which allowed users to see records outside their own group. Roles now track their creator via a new `created_by` column.
+
+* [security] Hardened the admin ACL middleware to fail closed. An administrative route with no ACL mapping is now denied rather than allowed, inheriting the permission of its nearest mapped ancestor, with a narrow allow-list for authentication, self-service account management and generic UI helpers.
+
+* [security] Removed SVG from the allowed upload types for the admin logo and favicon configuration fields.
+
+* [security] Fixed a security issue configuration file uploads.
+
+* [security] Fixed a security issue activity notes and the TinyMCE editor component.
+
+* [security] Fixed a security issue in the web form embed view.
+
+* [security] Fixed a security issue in attribute downloads.
+
+* [security] Fixed a security issue in mail links.
+
+* [security] Fixed broken tag handling in the tag settings controller.
+
+* [security] Fixed SVG sanitization bypasses in media and configuration file uploads.
+
+* [security] Secured installer APIs.
+
+## **v2.2.5 (4th of Aug 2026)**
+
+* #2631[fixed] Fixed the persons CSV import creating duplicate records and dropping select attribute values on re-import. Existing people are now updated by matched email regardless of a changed phone or organization (so the reported count is accurate), and select/multiselect option labels (or ids) are resolved to their option ids instead of being stored as `0`.
+
+* #2630[fixed] Fixed date attributes in the persons CSV import silently saving as `0000-00-00`. Spreadsheet serial numbers and regional formats such as `DD/MM/YYYY` are now normalised to a valid date, and a value that cannot be parsed is reported as a row error instead of being stored as a zero date.
+
+* [feature] Added Chinese (Simplified) `zh_CN` translation for the Admin, Installer, DataTransfer, WebForm and Core packages.
+
+* [feature] Added a configurable default dashboard date range — 1 month, 3 months, 9 months, 1 year, 2 years or a custom number of days — under Configuration > General > Settings > Dashboard Configurations.
+
+* [fixed] Fixed menu item names set in Configuration not applying to section pages, breadcrumbs and the mobile sidebar. Previously only the desktop sidebar reflected a rename.
+
+* [fixed] Fixed renaming the "Mail" and "Contacts" menu items having no effect anywhere, as their configuration fields did not match the actual menu keys.
+
+* [fixed] Fixed the dashboard date range label omitting the year on ranges spanning more than one calendar year, which rendered as "30 Jul - 30 Jul".
+
+* [fixed] Fixed Arabic DataTransfer translations never loading, as the file was named `ar/ar.php` instead of `ar/app.php`.
+
+* [fixed] Fixed the missing Korean translation for the "None" input validation option on the create and edit attribute forms.
+
+* [enhancement] Moved the Core and DataTransfer package translations into the Admin package. Only packages that ship their own Blade views now carry a `Resources/lang` directory.
+
+* [enhancement] Reduced database queries on every admin page by loading the configured menu names in a single query instead of one per menu item.
+
+* [enhancement] Documented the localization convention in the `crm-package-development` agent skill and in AGENTS.md.
+* [feature] Added a collapse/expand toggle to the admin sidebar, matching the Bagisto admin. The choice is remembered across page loads, and page content now reflows to the sidebar width instead of being overlaid by it. The sidebar no longer expands on hover; it is controlled by the toggle only.
+* #2614[security] Fixed unauthenticated installer access and executable email attachment upload vulnerabilities.
+
+* #2612[feature] Added import and export support for custom attributes for Leads and Persons.
+
+* #2609[feature] Added Google Contacts export for Persons with Google account connection, duplicate detection, queued export progress, and result summary.
+
+* #2608[fixed] Added missing "none" key to the Korean locale for attribute validation.
+
+* #2606[feature] Added a collapse/expand toggle to the admin sidebar, matching the Bagisto admin. The choice is remembered across page loads, and page content now reflows to the sidebar width instead of being overlaid by it. The sidebar no longer expands on hover; it is controlled by the toggle only.
+
+* #2606[feature] Added an option to show or hide the "Powered by" bar under Configuration > General > Settings > Powered by Section Configurations.
+
+* #2603[feature] Added Korean translations for the Installer, DataTransfer, WebForm, and Core packages.
+
+* #2602[feature] Added Korean translation support for the Admin package.
+
+* #2600[fixed] Fixed invalid activity calendar .ics date-times by emitting UTC RFC 5545 values.
+
+* #2592[security] Fixed webhook validation to reject internal endpoint URLs.
+
+* #2580[enhancement] Added a "None" option to input validation for text attributes.
+
+## **v2.2.4 (20th of July 2026)** *Release*
+
+* #2590[fixed] Fixed page does not refresh after creating a record via Quick Add.
+
+* #2589[fixed] Fixed Quick Add not working for users with group and individual permissions.
+
+* #2582[fixed] Fixed pipeline field visible on public webform.
+
+* #2581[enhancement] Fixed responsive UI issues when page is zoomed.
+
+* #2579[feature] Allow group selection for individual view permission users.
+
+* #2575[enhancement] Added previous month's sales update in Kanban view.
+
+* #2573[enhancement] Added dashboard support for multiple pipelines.
+
+* #2572[enhancement] Added filter by tag option in Contacts > Persons.
+
+* #2571[fixed] Fixed issue with lead creation.
+
+* #2570[fixed] Fixed auto-fill lead email issue.
+
+* #2567[fixed] Fixed IDOR agent record access control vulnerability.
+
+* #2563[fixed] Fixed Kanban infinite scroll duplicates issue.
+
+* #2583[fixed] Fixed SQL injection in rotten lead filter.
+
+* #2585[security] Fixed unrestricted file upload vulnerability (CVE-2026-38526).
+
+* #2559[fixed] Fixed agent record access control issue.
+
+* #2556[fixed] Fixed installation config save issue.
+
+* #2550[fixed] Fixed Kanban infinite scroll duplicates.
+
+* #2549[enhancement] Added support tab feature.
+
+* #2548[enhancement] Allow search by phone and email when creating a lead.
+
+* #2546[feature] Quick Attribute now available at lead form.
+
+* #2545[feature] Added agent skills functionality.
+
+* #2544[enhancement] Added validate skills.
+
+* #2543[enhancement] Added Agents Skills folder.
+
+* #2542[fixed] Fixed stored XSS vulnerability in notes field.
+
+* #2541[fixed] Fixed quote description truncation issue.
+
+* #2539[fixed] Fixed lost revenue arrow UI issue.
+
+* #2538[fixed] Fixed missing translations.
+
+* #2501[fixed] Fixed sales owner not saved in organization.
+
+* #2500[fixed] Fixed activities date filter range issue.
+
+* #2479[fixed] Fixed textarea field not rendered in WebForm.
+
+* #2471[fixed] Fixed missing translations for lead won/lost modal.
+
+* #2420[fixed] Added missing mega search translations for settings and configurations.
+
+* #2533[fixed] Fixed GUI installation issue.
+
+* #2419[security] Fixed stored XSS vulnerability in notes field.
+
+* #2454[fixed] Fixed quote description truncation.
+
+* #2407[fixed] Fixed missing translations.
+
+* #2157[fixed] Fixed auto-fill lead email when creating a lead.
+
+* #2258[fixed] Fixed issue with same-as-billing-address field.
+
+## **v2.2.3 (1st of May 2026)** *Release*
+
+* [fixed] Pipline critical issue resolved.
+
+## **v2.2.2 (1st of May 2026)** *Release*
+
+* [fixed] Update Change Log and version.
+
+## **v2.2.1 (1st of May 2026)** *Release*
+
+* [fixed] Quote fields now auto-fill correctly when a quote is linked to a lead.
+
+* [fixed] Fixed price formatting issue.
+
+* [fixed] Fixed Lead Kanban list ordering.
+
+* [fixed] Fixed header block position at the top.
+
+* [fixed] Updated Activity UI.
+
+* [fixed] Admins can now view and share quote details to a person from the quote list.
+
+* [fixed] Fixed submission issue on the web form.
+
+* [fixed] Fixed activity display issue in the Calendar view.
+
+* [fixed] Logo update issue resolved.
+
+* [enhancement] Drag-and-drop support added to Activity. Admins can now change date and time directly from the Calendar view.
+
+* [feature] Quick App feature added for faster access to key CRM actions.
+
+* [feature] Admins can now add or update a person directly from the lead view page.
+
+* [security] Resolved an authentication bypass vulnerability caused by improper access control in the installer.
+
+## **v2.2.0 (17th of March 2026)** *Release*
+
+* **[Laravel 12 Upgrade]** Upgraded framework to Laravel 12
+
+* #2480[enhancement] Codebase updates and refinements.
+
+* #2478[enhancement] Improved class instantiation handling.
+
+* #2472[enhancement] Upgrade to Laravel 12.
+
+* #2470[enhancement] Updated auto_commits.yml configuration.
+
+* #2469[enhancement] General enhancements and optimizations.
+
+* #2468[enhancement] Documentation updates (MD files).
+
+* #2450[fixed] Added ACL support for warehouses.
+
+* #2444[fixed] Improved global search functionality for organizations.

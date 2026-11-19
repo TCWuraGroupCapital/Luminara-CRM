@@ -1,0 +1,21 @@
+{
+    "name": "luminara/agent",
+    "description": "Luminara CRM agent action layer: permissioned, schema-described actions over a token API and MCP, with human approval, and an in-app assistant",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "anthropic-ai/sdk": "^1.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "Webkul\\Agent\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Webkul\\Agent\\Providers\\AgentServiceProvider"
+            ]
+        }
+    }
+}

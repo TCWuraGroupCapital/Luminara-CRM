@@ -1,0 +1,10 @@
+# Gitleaks configuration: the default rules, minus two known test fixtures.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Ledger tests build a PEM from the published RFC 7515 Appendix A.3 example P-256 key. It signs nothing outside the test suite."
+paths = [
+    '''^tests/Feature/Ledger/LedgerLifecycleTest\.php$''',
+    '''^tests/Unit/Ledger/CanonicalJsonAndMerkleTest\.php$''',
+]

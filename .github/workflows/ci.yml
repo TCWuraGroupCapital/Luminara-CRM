@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main, '2.2']
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secret-scan:
+    runs-on: ubuntu-latest
+    name: Gitleaks Secret Scan
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run Gitleaks
+        run: |
+          curl -fsSL --retry 3 -o /tmp/gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v8.24.2/gitleaks_8.24.2_linux_x64.tar.gz
+          echo "fa0500f6b7e41d28791ebc680f5dd9899cd42b58629218a5f041efa899151a8e  /tmp/gitleaks.tar.gz" | sha256sum -c -
+          sudo tar -xzf /tmp/gitleaks.tar.gz -C /usr/local/bin gitleaks
+          rm -f /tmp/gitleaks.tar.gz
+          gitleaks git --no-banner --redact --verbose .
+
+  tests:
+    runs-on: ${{ matrix.operating-system }}
+
+    strategy:
+      matrix:
+        operating-system: [ubuntu-latest]
+        php-versions: ['8.3']
+
+    name: PHP ${{ matrix.php-versions }} Pest Suite on ${{ matrix.operating-system }}
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: krayin
+        ports:
+          - 3306
+        options: --health-cmd="mysqladmin ping -uroot -proot" --health-interval=10s --health-timeout=5s --health-retries=5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+          extensions: bcmath, calendar, curl, exif, gd, imap, intl, mbstring, openssl, pcntl, pdo, pdo_mysql, sodium, tokenizer, zip
+          ini-values: error_reporting=E_ALL
+          tools: composer:v2
+
+      - name: Install Composer Dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Configure Testing Environment
+        run: |
+          cp .env.example .env
+          sed -i "s|^\(APP_ENV=\s*\).*$|\1testing|" .env
+          sed -i "s|^\(DB_HOST=\s*\).*$|\1127.0.0.1|" .env
+          sed -i "s|^\(DB_PORT=\s*\).*$|\1${{ job.services.mysql.ports['3306'] }}|" .env
+          sed -i "s|^\(DB_DATABASE=\s*\).*$|\1krayin|" .env
+          sed -i "s|^\(DB_USERNAME=\s*\).*$|\1root|" .env
+          sed -i "s|^\(DB_PASSWORD=\s*\).*$|\1root|" .env
+          php artisan key:generate --force
+
+      - name: Run Krayin Installer
+        run: php artisan krayin-crm:install --skip-env-check --skip-admin-creation --no-interaction
+
+      - name: Run Pest Suite
+        run: php artisan test --compact

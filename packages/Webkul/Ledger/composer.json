@@ -1,0 +1,22 @@
+{
+    "name": "luminara/ledger",
+    "description": "Luminara CRM Verifiable Append-Only Data Block & RFC 6962 Merkle Epoch Ledger",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "ext-openssl": "*",
+        "ext-sodium": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Webkul\\Ledger\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Webkul\\Ledger\\Providers\\LedgerServiceProvider"
+            ]
+        }
+    }
+}

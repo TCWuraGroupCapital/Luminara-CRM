@@ -1,0 +1,230 @@
+# Enterprise Production Stack — Luminara CRM behind Cloudflare Tunnel / WAF
+x-app-common: &app-common
+  build:
+    context: .
+    dockerfile: docker/Dockerfile
+    target: production
+  image: ghcr.io/luminaradigital/luminara-crm:latest
+  environment: &app-env
+    APP_NAME: "${APP_NAME:-Luminara CRM}"
+    APP_ENV: production
+    APP_DEBUG: "false"
+    APP_KEY: "${APP_KEY:?APP_KEY must be set}"
+    APP_URL: "${APP_URL:?APP_URL must be set (https://...)}"
+    APP_TIMEZONE: "${APP_TIMEZONE:-Australia/Melbourne}"
+    APP_LOCALE: "${APP_LOCALE:-en}"
+    APP_CURRENCY: "${APP_CURRENCY:-AUD}"
+    TRUSTED_PROXIES: "${TRUSTED_PROXIES:-127.0.0.1,::1,172.31.250.0/28,173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22,2400:cb00::/32,2606:4700::/32,2803:f800::/32,2405:b500::/32,2405:8100::/32,2a06:98c0::/29,2c0f:f248::/32}"
+    CORS_ALLOWED_ORIGINS: "${CORS_ALLOWED_ORIGINS:-}"
+    DB_CONNECTION: mysql
+    DB_HOST: db
+    DB_PORT: 3306
+    DB_DATABASE: "${DB_DATABASE:-luminara_crm}"
+    DB_USERNAME: "${DB_USERNAME:-luminara}"
+    DB_PASSWORD: "${DB_PASSWORD:?DB_PASSWORD must be set}"
+    CACHE_STORE: redis
+    CACHE_DRIVER: redis
+    QUEUE_CONNECTION: redis
+    SESSION_DRIVER: redis
+    SESSION_ENCRYPT: "true"
+    SESSION_SECURE_COOKIE: "true"
+    REDIS_CLIENT: phpredis
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+    REDIS_PASSWORD: "${REDIS_PASSWORD:?REDIS_PASSWORD must be set}"
+    MAIL_MAILER: "${MAIL_MAILER:-smtp}"
+    MAIL_HOST: "${MAIL_HOST:-}"
+    MAIL_PORT: "${MAIL_PORT:-587}"
+    MAIL_USERNAME: "${MAIL_USERNAME:-}"
+    MAIL_PASSWORD: "${MAIL_PASSWORD:-}"
+    MAIL_ENCRYPTION: "${MAIL_ENCRYPTION:-tls}"
+    MAIL_VERIFY_PEER: "${MAIL_VERIFY_PEER:-true}"
+    MAIL_DOMAIN: "${MAIL_DOMAIN:-luminaracrm.local}"
+    MAIL_FROM_ADDRESS: "${MAIL_FROM_ADDRESS:-noreply@luminaracrm.local}"
+    MAIL_RECEIVER_DRIVER: "${MAIL_RECEIVER_DRIVER:-sendgrid}"
+    MAIL_RECEIVER_INBOUND_TOKEN: "${MAIL_RECEIVER_INBOUND_TOKEN:-}"
+    LOG_CHANNEL: "${LOG_CHANNEL:-stderr}"
+    LOG_LEVEL: "${LOG_LEVEL:-info}"
+    SECURITY_REQUIRE_ADMIN_MFA: "${SECURITY_REQUIRE_ADMIN_MFA:-${SECURITY_ENFORCE_ADMIN_MFA:-true}}"
+    SECURITY_MAX_FAILED_LOGINS_PER_EMAIL: "${SECURITY_MAX_FAILED_LOGINS_PER_EMAIL:-10}"
+    SECURITY_BACKUP_RETENTION_DAYS: "${SECURITY_BACKUP_RETENTION_DAYS:-14}"
+    LUMINARA_ASSISTANT_API_KEY: "${LUMINARA_ASSISTANT_API_KEY:-}"
+    LUMINARA_ASSISTANT_MODEL: "${LUMINARA_ASSISTANT_MODEL:-claude-opus-5-5}"
+    LUMINARA_ASSISTANT_BASE_URL: "${LUMINARA_ASSISTANT_BASE_URL:-}"
+    LUMINARA_LEDGER_SEED: "${LUMINARA_LEDGER_SEED:-}"
+    LEDGER_ANCHOR_DRIVER: "${LEDGER_ANCHOR_DRIVER:-local}"
+    TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
+    TELEGRAM_BOT_USERNAME: "${TELEGRAM_BOT_USERNAME:-}"
+    TELEGRAM_WEBHOOK_SECRET: "${TELEGRAM_WEBHOOK_SECRET:-}"
+    GOURWEST_WEBHOOK_SECRET: "${GOURWEST_WEBHOOK_SECRET:-}"
+    TON_ANCHOR_RELAYER_URL: "${TON_ANCHOR_RELAYER_URL:-}"
+    TON_ANCHOR_CONTRACT: "${TON_ANCHOR_CONTRACT:-}"
+  volumes:
+    - luminara_prod_storage:/var/www/html/storage
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  logging: &default-logging
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "5"
+  restart: unless-stopped
+
+services:
+  app:
+    <<: *app-common
+    environment:
+      <<: *app-env
+      CONTAINER_ROLE: web
+      RUN_MIGRATIONS: "${RUN_MIGRATIONS:-true}"
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:80"
+    networks:
+      - backend
+      - egress
+      - tunnel
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1/up >/dev/null || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  worker:
+    <<: *app-common
+    environment:
+      <<: *app-env
+      CONTAINER_ROLE: worker
+      RUN_MIGRATIONS: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      app:
+        condition: service_healthy
+    networks:
+      - backend
+      - egress
+    healthcheck:
+      test: ["CMD-SHELL", "grep -qa 'queue:work' /proc/1/cmdline || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  scheduler:
+    <<: *app-common
+    environment:
+      <<: *app-env
+      CONTAINER_ROLE: scheduler
+      RUN_MIGRATIONS: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      app:
+        condition: service_healthy
+    networks:
+      - backend
+      - egress
+    healthcheck:
+      test: ["CMD-SHELL", "grep -qa 'schedule:work' /proc/1/cmdline || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  db:
+    image: mysql:8.0.32
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --innodb-buffer-pool-size=512M
+    environment:
+      MYSQL_DATABASE: "${DB_DATABASE:-luminara_crm}"
+      MYSQL_USER: "${DB_USERNAME:-luminara}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:?DB_PASSWORD must be set}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD must be set}"
+    volumes:
+      - luminara_prod_mysql:/var/lib/mysql
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot \"-p$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    environment:
+      REDIS_PASSWORD: "${REDIS_PASSWORD:?REDIS_PASSWORD must be set}"
+    volumes:
+      - luminara_prod_redis:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  cloudflared:
+    image: cloudflare/cloudflared:2025.2.0
+    profiles: ["cloudflare"]
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: "${CLOUDFLARE_TUNNEL_TOKEN:-}"
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - tunnel
+      - egress
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+networks:
+  backend:
+    internal: true
+  egress:
+    driver: bridge
+  tunnel:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.31.250.0/28
+
+volumes:
+  luminara_prod_mysql:
+  luminara_prod_redis:
+  luminara_prod_storage:
