@@ -69,8 +69,7 @@
                 "issues": "https://github.com/anthropics/anthropic-sdk-php/issues",
                 "source": "https://github.com/anthropics/anthropic-sdk-php/tree/v1.8.0"
             },
-            "time": "2026-11-10T16:24:39+00:00",
-            "published-time": "2026-11-10T16:33:51+00:00"
+            "time": "2026-11-10T16:24:39+00:00"
         },
         {
             "name": "barryvdh/laravel-dompdf",
@@ -4806,8 +4805,7 @@
                 "issues": "https://github.com/open-telemetry/opentelemetry-php/issues",
                 "source": "https://github.com/open-telemetry/opentelemetry-php"
             },
-            "time": "2026-11-05T11:54:49+00:00",
-            "published-time": "2026-11-05T12:00:54+00:00"
+            "time": "2026-11-05T11:54:49+00:00"
         },
         {
             "name": "open-telemetry/context",
@@ -4865,8 +4863,7 @@
                 "issues": "https://github.com/open-telemetry/opentelemetry-php/issues",
                 "source": "https://github.com/open-telemetry/opentelemetry-php"
             },
-            "time": "2026-11-05T11:54:49+00:00",
-            "published-time": "2026-11-05T12:00:45+00:00"
+            "time": "2026-11-05T11:54:49+00:00"
         },
         {
             "name": "paragonie/random_compat",
@@ -4995,8 +4992,7 @@
                 "issues": "https://github.com/php-http/discovery/issues",
                 "source": "https://github.com/php-http/discovery/tree/1.20.0"
             },
-            "time": "2024-10-02T11:20:13+00:00",
-            "published-time": "2024-10-02T11:21:00+00:00"
+            "time": "2024-10-02T11:20:13+00:00"
         },
         {
             "name": "phpoffice/phpspreadsheet",
@@ -6849,16 +6845,16 @@
         },
         {
             "name": "smalot/pdfparser",
-            "version": "v2.12.5",
+            "version": "v2.13.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/smalot/pdfparser.git",
-                "reference": "2cfa0d92bd557875c9f52a75fde0e8392302a354"
+                "reference": "a71c6dd38e60a995fdb4d36e4433b8b3557c65dc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/smalot/pdfparser/zipball/2cfa0d92bd557875c9f52a75fde0e8392302a354",
-                "reference": "2cfa0d92bd557875c9f52a75fde0e8392302a354",
+                "url": "https://api.github.com/repos/smalot/pdfparser/zipball/a71c6dd38e60a995fdb4d36e4433b8b3557c65dc",
+                "reference": "a71c6dd38e60a995fdb4d36e4433b8b3557c65dc",
                 "shasum": ""
             },
             "require": {
@@ -6894,9 +6890,9 @@
             ],
             "support": {
                 "issues": "https://github.com/smalot/pdfparser/issues",
-                "source": "https://github.com/smalot/pdfparser/tree/v2.12.5"
+                "source": "https://github.com/smalot/pdfparser/tree/v2.13.1"
             },
-            "time": "2026-04-17T11:37:58+00:00"
+            "time": "2026-10-13T08:49:45+00:00"
         },
         {
             "name": "standard-webhooks/standard-webhooks",
@@ -6941,8 +6937,7 @@
                 "issues": "https://github.com/standard-webhooks/standard-webhooks/issues",
                 "source": "https://github.com/standard-webhooks/standard-webhooks/tree/v1.0.2"
             },
-            "time": "2026-02-18T19:02:27+00:00",
-            "published-time": "2026-02-25T17:09:26+00:00"
+            "time": "2026-02-18T19:02:27+00:00"
         },
         {
             "name": "symfony/clock",
@@ -14154,5 +14149,5 @@
     "platform-overrides": {
         "php": "8.3.30"
     },
-    "plugin-api-version": "2.11.0"
+    "plugin-api-version": "2.9.0"
 }
