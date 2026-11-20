@@ -203,9 +203,12 @@ services:
     depends_on:
       app:
         condition: service_healthy
+    # Only the tunnel network: it has outbound internet access, and it is the one subnet Apache
+    # trusts for CF-Connecting-IP and X-Forwarded-Proto. On a second network Docker DNS can
+    # resolve `app` to that network's address, and every request then looks like plain HTTP
+    # from one client.
     networks:
       - tunnel
-      - egress
     logging: *default-logging
     restart: unless-stopped
     deploy:
