@@ -31,7 +31,7 @@ version.
 Report security issues privately. Do **not** open a public GitHub
 issue, pull request or discussion.
 
-- **Luminara Digital Deployment & Enterprise Customizations** — Report via [GitHub Private Vulnerability Reporting](https://github.com/TCWuraGroupCapital/Luminara-CRM/security/advisories/new) or email [security@luminaradigital.com](mailto:security@luminaradigital.com)
+- **Luminara Digital Deployment & Enterprise Customizations** — Report via [GitHub Private Vulnerability Reporting](https://github.com/TCWuraGroupCapital/Luminara-CRM/security/advisories/new)
 - **Upstream Krayin CRM Core** — [support@webkul.com](mailto:support@webkul.com)
 
 Please include:

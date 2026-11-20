@@ -37,7 +37,7 @@ motion:
 
 ## Why this direction
 
-The old UI was stock Krayin, and the reference shots you shared are the 2025 Dribbble look: near-black glass, neon donuts, sparkle-and-orb AI. The research ([report](../reports/AI%20native%20CRM%20design%202030.md)) shows why that look dates. NN/g found nobody links the sparkle icon to AI. Linear's 2026 refresh went the other way, with the line "don't compete for attention you haven't earned". Analysts expect the job to shift from operating a CRM to supervising the work an agent does in it. So the screen has to answer one question: **what did the agent do, and what is waiting for me?**
+The old UI was stock Krayin, and the usual alternative is the 2025 Dribbble look: near-black glass, neon donuts, sparkle-and-orb AI. The research ([report](../reports/AI%20native%20CRM%20design%202030.md)) shows why that look dates. NN/g found nobody links the sparkle icon to AI. Linear's 2026 refresh went the other way, with the line "don't compete for attention you haven't earned". Analysts expect the job to shift from operating a CRM to supervising the work an agent does in it. So the screen has to answer one question: **what did the agent do, and what is waiting for me?**
 
 The answer comes from two old trades that already have a visual language for "proposed, not final":
 
@@ -101,7 +101,7 @@ How the Desk differs from the prototype:
 
 ## The Workbench shell (v3 prototype, 19 Nov 2026)
 
-`docs/prototype/v3/index.html` is the reference for the rest of the admin. It uses sample data modelled on the Gourwest demo.
+`docs/prototype/v3/index.html` is the reference for the rest of the admin. It uses sample data for a fictional hospitality group.
 
 **Built into `packages/Webkul/Admin`:**
 - Neutrals: the Tailwind `gray` ramp is remapped to hue 190 in `tailwind.config.js`, so every admin view follows. Tokens for pencil, hairline and focus are `--lum-*` in `assets/css/app.css`.
@@ -111,7 +111,7 @@ How the Desk differs from the prototype:
 
 **Not built yet:** the agent's proposal slip on the board and the "Waiting for you" and agent-call widgets (they need data from `Webkul\Agent`), the Dashboard layout, lead counts per stage in the sidebar, and the mobile drawer restyle.
 
-- **Structure** comes from the tasks-board reference the team chose: a grouped sidebar with live counts per stage, a widget strip above the work, Board / Table tabs, and a four-column lead board. Light and dark are both designed.
+- **Structure** follows a conventional tasks board: a grouped sidebar with live counts per stage, a widget strip above the work, Board / Table tabs, and a four-column lead board. Light and dark are both designed.
 - **Meaning** is unchanged from the rules above: teal is the primary action, pencil blue is the agent and unsigned work, charts are drawn to scale and hatch what a signature would change.
 - **Signature move:** the board's dashed drop slot is the agent's proposal. A proposed move sits as a dashed pencil slip in the destination column, with the reason and the re-check, until a person signs or rejects it.
 - **Token changes against the front matter:** radii move to 6px control / 12px object, and `paper` becomes the sidebar and column ground with `sheet` as the main surface. Colours and type are the same.

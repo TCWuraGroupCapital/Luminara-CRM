@@ -1,18 +1,18 @@
 <!doctype html>
 <!--
   BRIEF
-  Audience: Luminara sales reps and owners (first tenant: Gourwest) who live in the lead pipeline all day
+  Audience: Luminara sales reps and owners who live in the lead pipeline all day
             and also supervise an in-app agent. Their job here: see where every lead stands, move it,
             and sign or reject what the agent proposes.
   Message:  One calm workspace: the pipeline is the page, and anything the agent wants is drawn in pencil until you sign it.
   Constraints: prototype for the Krayin admin (Blade + Vue 3 + Tailwind). 10 locales incl. RTL, so logical
                properties only. Light + dark. WCAG 2.2 AA. Single file, no build step, works offline except fonts.
 
-  DIRECTION — "Workbench": the tasks-board structure the team chose (grouped sidebar with counts, widget strip,
+  DIRECTION — "Workbench": a conventional tasks-board structure (grouped sidebar with counts, widget strip,
   view tabs, kanban), carrying the Drafting-table meaning from docs/design.md (teal = primary action,
   pencil blue = agent / unsigned, vermilion = irreversible).
   References and the move borrowed from each:
-    - The shared "Tasks report" board: grouped sidebar with live counts, a widget strip above the board,
+    - A typical tasks board: grouped sidebar with live counts, a widget strip above the board,
       and the dashed drop slot for a card in flight.
     - Linear: tinted neutrals stepping in lightness; structure from hairlines, not shadows.
     - Architectural drawings (already in design.md): dashed = proposed, solid = built.
@@ -25,7 +25,7 @@
     Top bar  — act: search, create lead, theme.
     Leads    — widget strip (prove: pipeline to scale, agent state), then board / table (act).
     Dashboard— prove: four figures, pipeline by stage, the agent ledger.
-  Data is SAMPLE data modelled on the Gourwest demo database (real lead titles, stages and call ids; invented dates).
+  Data is SAMPLE data for a fictional hospitality group.
 -->
 <html lang="en" dir="ltr">
 <head>
@@ -383,7 +383,7 @@ label.f :is(input, select) { height: 40px; padding-inline: 10px; border: 1px sol
 <div class="toast" aria-live="polite" id="toast"></div>
 
 <script>
-/* Sample data modelled on the Gourwest demo database. Stage names and call ids are real; dates are invented. */
+/* Sample data for a fictional hospitality group. */
 const STAGES = ['New', 'Follow Up', 'Prospect', 'Negotiation'];
 const state = {
   view: 'leads', tab: 'board', q: '',
@@ -561,7 +561,7 @@ function dashboardView() {
 function render(focusHead) {
   renderNav();
   $('#main').innerHTML = (state.view === 'leads' ? leadsView() : dashboardView()) +
-    `<p class="foot">Prototype with sample data modelled on the Gourwest demo. The Agent is an AI model; nothing it proposes changes a record until a person signs it.</p>`;
+    `<p class="foot">Prototype with sample data for a fictional hospitality group. The Agent is an AI model; nothing it proposes changes a record until a person signs it.</p>`;
   $('#crumb-group').textContent = state.view === 'leads' ? 'Sales' : 'Overview';
   $('#crumb-page').textContent = state.view === 'leads' ? 'Leads' : 'Dashboard';
   document.title = (state.view === 'leads' ? 'Leads' : 'Dashboard') + ' · Luminara';

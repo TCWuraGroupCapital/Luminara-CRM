@@ -2,6 +2,8 @@
 
 Luminara CRM is an open-source CRM built on [Krayin CRM](https://github.com/krayin/laravel-crm) (Laravel 12, PHP 8.3). It adds an AI agent that works in the CRM as a real user, with that user's permissions, and has to ask before it does anything you can't take back.
 
+![The Desk: what is waiting for your OK, beside a model of the pipeline drawn to scale](docs/images/desk.png)
+
 - **The agent asks first.** Reads run straight away. Creating a lead, contact, note, or standard quote runs as an unreviewed pencil draft with a signed receipt until a person marks it reviewed. Moving several leads, merging contacts, discounting a quote past 15%, or deleting a record waits for a person with the approval permission. Before an approved call runs, the CRM checks that the records haven't changed since the agent asked. Calls nobody decides expire after 72 hours.
 - **Morning Briefing (`Briefing`)** gives business owners a plain-English daily cockpit: one-line deal/note intake capture, waiting signatures, unreviewed pencil drafts, 1-click **Agent Passports** (Grokbot, Antigravity, Claude Code, Hermes Agent), and editable **Business Playbook Memory**.
 - **The Desk** (`Desk` in the sidebar) shows what's waiting for your OK beside a 3D model of your pipeline. You can approve or reject there, drag deals between stages with Undo, and see what the agent did today. Phones and devices without WebGL get stage bars instead.
@@ -12,6 +14,10 @@ Luminara CRM is an open-source CRM built on [Krayin CRM](https://github.com/kray
 - **A/B experiments and lead scoring** under Settings > Other Settings > A/B Experiments.
 
 Everything else (leads, contacts, quotes, products, email, web forms, automation) is Krayin's, in 10 languages.
+
+| Morning Briefing | Leads board |
+| --- | --- |
+| ![Morning Briefing with intake capture, today's figures, agent passports and the ledger head](docs/images/briefing.png) | ![Leads board with the open pipeline drawn to scale above the stage columns](docs/images/leads-board.png) |
 
 ## What gets sent to an AI service
 
@@ -71,7 +77,7 @@ Send the bearer token to `/api/agent` or `/api/agent/mcp` (add `X-Luminara-Dry-R
 
 Two-factor login is required for admins by default in production.
 
-The full runbook is in [docs/deployment-cloudflare-github.md](docs/deployment-cloudflare-github.md), with a checklist in [docs/launch-checklist.md](docs/launch-checklist.md).
+The full runbook is in [docs/deployment-cloudflare-github.md](docs/deployment-cloudflare-github.md).
 
 ## Known limits
 
@@ -82,9 +88,9 @@ The full runbook is in [docs/deployment-cloudflare-github.md](docs/deployment-cl
 
 ```bash
 docker compose exec app php artisan test --compact
-# Tests run against luminara_crm_test (see phpunit.xml). On a fresh environment
+# Tests run against a separate database, luminara_crm_test. On a fresh environment
 # create it as a schema-identical clone of luminara_crm first; never point tests
-# at the demo database, which holds the stakeholder presentation data.
+# at a database whose data you want to keep.
 docker compose exec app ./vendor/bin/pint
 docker compose exec app ./vendor/bin/phpstan analyse --memory-limit=2G
 npm run test:js
