@@ -11,6 +11,7 @@ use Illuminate\Support\ServiceProvider;
 use Webkul\Core\Models\CoreConfig;
 use Webkul\Core\ViewRenderEventManager;
 use Webkul\Security\Console\Commands\BackupCommand;
+use Webkul\Security\Console\Commands\BackupRestoreCommand;
 use Webkul\Security\Console\Commands\BackupVerifyCommand;
 use Webkul\Security\Console\Commands\ProvisionCommand;
 use Webkul\Security\Http\Middleware\EnforceAdminMfa;
@@ -50,6 +51,7 @@ class SecurityServiceProvider extends ServiceProvider
                 ProvisionCommand::class,
                 BackupCommand::class,
                 BackupVerifyCommand::class,
+                BackupRestoreCommand::class,
             ]);
         }
 

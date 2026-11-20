@@ -41,6 +41,7 @@ x-app-common: &app-common
     MAIL_VERIFY_PEER: "${MAIL_VERIFY_PEER:-true}"
     MAIL_DOMAIN: "${MAIL_DOMAIN:-luminaracrm.local}"
     MAIL_FROM_ADDRESS: "${MAIL_FROM_ADDRESS:-noreply@luminaracrm.local}"
+    MAIL_FROM_NAME: "${MAIL_FROM_NAME:-Luminara CRM}"
     MAIL_RECEIVER_DRIVER: "${MAIL_RECEIVER_DRIVER:-sendgrid}"
     MAIL_RECEIVER_INBOUND_TOKEN: "${MAIL_RECEIVER_INBOUND_TOKEN:-}"
     LOG_CHANNEL: "${LOG_CHANNEL:-stderr}"
@@ -223,6 +224,63 @@ services:
       resources:
         limits:
           memory: 128M
+
+  # Off-site copy of storage/app (database backups of every workspace + uploaded files) to any
+  # S3-compatible bucket, encrypted on this host before upload (rclone crypt). It only copies, so
+  # a deletion or ransomware on this host cannot remove the off-site copy; archives older than
+  # BACKUP_OFFSITE_RETENTION_DAYS are pruned off-site. Opt in with `--profile offsite`.
+  backup-sync:
+    image: rclone/rclone:1.68.2
+    profiles: ["offsite"]
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -u
+        RCLONE_CONFIG_OFFSITE_PASSWORD="$$(rclone obscure "$$BACKUP_CRYPT_PASSWORD")"
+        RCLONE_CONFIG_OFFSITE_PASSWORD2="$$(rclone obscure "$$BACKUP_CRYPT_SALT")"
+        export RCLONE_CONFIG_OFFSITE_PASSWORD RCLONE_CONFIG_OFFSITE_PASSWORD2
+        while true; do
+          if rclone copy /data/app offsite:app --exclude '.app_key' --log-level NOTICE \
+            && rclone delete offsite:app --min-age "$${BACKUP_OFFSITE_RETENTION_DAYS}d" --include '**luminara_backup_*' --log-level NOTICE; then
+            date -u +%FT%TZ > /tmp/last-ok
+            echo "offsite sync ok $$(cat /tmp/last-ok)"
+            if [ -n "$${BACKUP_HEARTBEAT_URL}" ]; then wget -q -T 15 -O /dev/null "$${BACKUP_HEARTBEAT_URL}" || echo "heartbeat ping failed" >&2; fi
+          else
+            echo "offsite sync FAILED $$(date -u +%FT%TZ)" >&2
+          fi
+          sleep "$${BACKUP_SYNC_INTERVAL_SECONDS}"
+        done
+    environment:
+      BACKUP_CRYPT_PASSWORD: "${BACKUP_CRYPT_PASSWORD:?BACKUP_CRYPT_PASSWORD must be set for off-site backups}"
+      BACKUP_CRYPT_SALT: "${BACKUP_CRYPT_SALT:?BACKUP_CRYPT_SALT must be set for off-site backups}"
+      BACKUP_OFFSITE_RETENTION_DAYS: "${BACKUP_OFFSITE_RETENTION_DAYS:-35}"
+      BACKUP_SYNC_INTERVAL_SECONDS: "${BACKUP_SYNC_INTERVAL_SECONDS:-3600}"
+      # Optional heartbeat/cron-monitor URL (Better Stack, UptimeRobot, Healthchecks.io), pinged after each good sync.
+      BACKUP_HEARTBEAT_URL: "${BACKUP_HEARTBEAT_URL:-}"
+      RCLONE_CONFIG_R2_TYPE: s3
+      RCLONE_CONFIG_R2_PROVIDER: "${BACKUP_S3_PROVIDER:-Cloudflare}"
+      RCLONE_CONFIG_R2_ENDPOINT: "${BACKUP_S3_ENDPOINT:-}"
+      RCLONE_CONFIG_R2_ACCESS_KEY_ID: "${BACKUP_S3_ACCESS_KEY_ID:-}"
+      RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: "${BACKUP_S3_SECRET_ACCESS_KEY:-}"
+      RCLONE_CONFIG_R2_NO_CHECK_BUCKET: "true"
+      RCLONE_CONFIG_OFFSITE_TYPE: crypt
+      RCLONE_CONFIG_OFFSITE_REMOTE: "r2:${BACKUP_S3_BUCKET:-luminara-backups}/${BACKUP_S3_PREFIX:-luminara-prod}"
+    volumes:
+      - luminara_prod_storage:/data:ro
+    networks:
+      - egress
+    healthcheck:
+      test: ["CMD-SHELL", "find /tmp/last-ok -mmin -130 2>/dev/null | grep -q ."]
+      interval: 5m
+      timeout: 10s
+      retries: 1
+      start_period: 10m
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
 networks:
   backend:

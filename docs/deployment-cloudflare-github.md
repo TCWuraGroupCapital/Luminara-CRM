@@ -185,5 +185,56 @@ Limits to know: the Telegram bot and mini app only serve the main workspace, and
   docker compose -f compose.prod.yaml --env-file .env.prod exec app php artisan luminara:ledger-verify --json
   docker compose -f compose.prod.yaml --env-file .env.prod exec app php artisan luminara:passport admin@yourdomain.com claude-code --json
   ```
+### 4.1 Off-site copies (`backup-sync`)
+
+Backups on the same disk as the database don't protect against losing that disk. The optional `backup-sync` service (profile `offsite`) copies `storage/app` to any S3-compatible bucket every hour. That folder holds the database backups of every workspace plus uploaded files.
+
+- Files are encrypted on this host with `rclone crypt` before upload. The bucket sees only scrambled names and contents. The keys are `BACKUP_CRYPT_PASSWORD` and `BACKUP_CRYPT_SALT`.
+- The service only copies. Deleting a file here never deletes the off-site copy. Off-site archives older than `BACKUP_OFFSITE_RETENTION_DAYS` (35 by default) are pruned.
+- Use a bucket-scoped key. For Cloudflare R2, that's an API token with *Object Read & Write* on the one bucket. Its S3 access key ID is the token ID and its secret is the SHA-256 of the token value.
+
+1. Fill in `BACKUP_S3_*` and `BACKUP_CRYPT_*` in `.env.prod` (see `.env.example`).
+2. Store `BACKUP_CRYPT_PASSWORD`, `BACKUP_CRYPT_SALT` **and** `APP_KEY` in your password manager. Without them the off-site copy can't be decrypted or verified.
+3. Start the service:
+
+```bash
+docker compose -p luminara-prod -f compose.prod.yaml --env-file .env.prod --profile cloudflare --profile offsite up -d --no-deps backup-sync
+docker logs luminara-prod-backup-sync-1   # "offsite sync ok <time>" once an hour; the container turns unhealthy after ~2 h without one
+```
+
+### 4.2 Restore drill (`luminara:backup-restore`)
+
+`luminara:backup-restore` restores a verified backup into a **scratch** database and checks every table's row count against the signed manifest.
+- It refuses the database it runs against and any database that already holds a row. It can never overwrite live data.
+- Moving production onto a restored database is a separate, deliberate step.
+- With `--migrate` it builds the schema from the current code first, so restore with the release that made the backup.
+- The database user needs rights on the scratch name, for example ``GRANT ALL ON `luminara\_crm\_restore\_%`.* TO 'luminara'@'%';``.
+
+Run the drill every quarter. Do it from the off-site copy, on another machine if you can:
+
+```bash
+# 1. Download and decrypt the latest backup into ./restore (same env as backup-sync)
+docker compose -p luminara-prod -f compose.prod.yaml --env-file .env.prod --profile offsite run --rm --no-deps \
+  -v "$PWD/restore:/restore" --entrypoint sh backup-sync -c '
+  export RCLONE_CONFIG_OFFSITE_PASSWORD="$(rclone obscure "$BACKUP_CRYPT_PASSWORD")" RCLONE_CONFIG_OFFSITE_PASSWORD2="$(rclone obscure "$BACKUP_CRYPT_SALT")"
+  latest=$(rclone lsf offsite:app/backups --include "*.manifest.json" | sort | tail -1)
+  rclone copy offsite:app/backups /restore --include "${latest%.manifest.json}.*"'
+
+# 2. Restore it with the production APP_KEY. The files must sit under storage/app/backups,
+#    the folder named inside the signed manifest.
+docker run --rm -e APP_KEY -e DB_DATABASE=<any database you may read> -v "$PWD/restore:/var/www/html/storage/app/backups:ro" \
+  <app image> php artisan luminara:backup-restore --database=luminara_crm_restore_drill --migrate --path=backups
+
+# 3. Drop the scratch database and delete ./restore: both hold customer data.
+```
+
+For a workspace, download `app/workspaces/<id>/backups` instead, and run the restore with `LUMINARA_WORKSPACE=<slug>`.
+
+**Drill log**
+
+| Date | Backup | Source | Result |
+| --- | --- | --- | --- |
+| 2026-11-21 | `luminara_backup_20261120_132804` (main workspace) | R2 off-site copy, restored on the local MySQL server | 1,013 rows across 81 tables, all counts match; 34 s |
+
 - **First-Login Administrator MFA Enrollment:**
   When `SECURITY_REQUIRE_ADMIN_MFA=true`, signing in at `https://crm.yourdomain.com/admin/login` automatically redirects un-enrolled administrators to `/admin/security/mfa/setup` to pair an RFC 6238 authenticator app and download 8 single-use recovery codes before accessing CRM data.
