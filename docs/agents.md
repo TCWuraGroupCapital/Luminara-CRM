@@ -16,7 +16,12 @@ docker compose exec app php artisan luminara:passport admin@example.com claude-c
 
 Or sign in, open **Briefing**, and use **Connect Your AI**.
 
-The token is shown once. Only a hash is stored. Give each agent its own passport so you can revoke one without affecting the others.
+The token is shown once. Only a hash is stored. The examples below read it from an environment variable, so it stays out of your shell history and your files:
+
+```bash
+export LUMINARA_TOKEN="paste the token here"
+```
+ Give each agent its own passport so you can revoke one without affecting the others.
 
 Narrow the scope whenever you can:
 
@@ -35,7 +40,7 @@ A call outside the scope is refused with `403` and `passport_scope_denied`.
 ### Claude Code
 
 ```bash
-claude mcp add --transport http luminara-crm http://127.0.0.1:8080/api/agent/mcp --header "Authorization: Bearer YOUR_TOKEN"
+claude mcp add --transport http luminara-crm http://127.0.0.1:8080/api/agent/mcp --header "Authorization: Bearer $LUMINARA_TOKEN"
 ```
 
 Run `claude mcp list` and the server should show as connected. The `--json` output of `luminara:passport` also contains an `mcp_config` block you can paste into a project's `.mcp.json`.
@@ -45,7 +50,7 @@ Run `claude mcp list` and the server should show as connected. The `--json` outp
 Add a remote (HTTP) MCP server in the client's settings with:
 
 - URL: `http://127.0.0.1:8080/api/agent/mcp`
-- Header: `Authorization: Bearer YOUR_TOKEN`
+- Header: `Authorization: Bearer` followed by the token
 
 The endpoint speaks JSON-RPC 2.0 over HTTP POST and answers with plain JSON. It offers 26 tools, 4 resources (`luminara://briefing/today`, `luminara://memory/playbook`, `luminara://ledger/head`, `luminara://context/schema`) and 4 prompts (`intake`, `quote`, `followup`, `morning_briefing`). It does not open a server-sent event stream, so a `GET` returns `405`.
 
@@ -61,7 +66,7 @@ Then call actions:
 
 ```bash
 curl -X POST http://127.0.0.1:8080/api/agent/actions/leads_create \
-  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Authorization: Bearer $LUMINARA_TOKEN" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: renewal-dana-001" \
   -d '{"title":"Renewal","person_name":"Dana","person_email":"dana@example.com","lead_value":1200}'
