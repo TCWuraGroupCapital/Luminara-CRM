@@ -125,6 +125,7 @@ class IssuePassportCommand extends Command
             'mcp_config' => [
                 'mcpServers' => [
                     'luminara-crm' => [
+                        'type' => 'http',
                         'url' => $mcpUrl,
                         'headers' => ['Authorization' => 'Bearer '.$plainTextToken],
                     ],

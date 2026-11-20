@@ -65,7 +65,7 @@ docker compose exec app php artisan luminara:passport admin@example.com claude-c
 docker compose exec app php artisan luminara:act briefing_today --as=admin@example.com --passport=claude-code --json
 ```
 
-Send the bearer token to `/api/agent` or `/api/agent/mcp` (add `X-Luminara-Dry-Run: 1` to preview any action inside a database savepoint without persisting changes). Machine-readable discovery manifests live at `/llms.txt` and `/.well-known/agent.json`.
+Send the bearer token to `/api/agent` or `/api/agent/mcp` (add `X-Luminara-Dry-Run: 1` to preview any action inside a database savepoint without persisting changes). Machine-readable discovery manifests live at `/llms.txt` and `/.well-known/agent.json`. [docs/agents.md](docs/agents.md) walks through connecting Claude Code, Antigravity, Grokbot or any other agent, and what the agent will and won't be allowed to do.
 
 ## Run it in production
 
