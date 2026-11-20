@@ -77,7 +77,7 @@
 
                     <!-- Version -->
                     <p class="text-gray-500 dark:text-gray-400">
-                        @lang('admin::app.layouts.app-version', ['version' => core()->version()])
+                        @lang('admin::app.layouts.app-version', ['version' => core()->luminaraVersion()])
                     </p>
                 </div>
 

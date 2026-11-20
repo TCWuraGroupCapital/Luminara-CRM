@@ -1,5 +1,7 @@
 # Luminara CRM
 
+[![CI](https://github.com/TCWuraGroupCapital/Luminara-CRM/actions/workflows/ci.yml/badge.svg)](https://github.com/TCWuraGroupCapital/Luminara-CRM/actions/workflows/ci.yml) [![Browser tests](https://github.com/TCWuraGroupCapital/Luminara-CRM/actions/workflows/admin_playwright_tests.yml/badge.svg)](https://github.com/TCWuraGroupCapital/Luminara-CRM/actions/workflows/admin_playwright_tests.yml) [![Docker and security](https://github.com/TCWuraGroupCapital/Luminara-CRM/actions/workflows/docker.yml/badge.svg)](https://github.com/TCWuraGroupCapital/Luminara-CRM/actions/workflows/docker.yml) [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE) ![Status: public beta](https://img.shields.io/badge/status-public%20beta-orange.svg)
+
 Luminara CRM is an open-source CRM built on [Krayin CRM](https://github.com/krayin/laravel-crm) (Laravel 12, PHP 8.3). It adds an AI agent that works in the CRM as a real user, with that user's permissions, and has to ask before it does anything you can't take back.
 
 ![The Desk: what is waiting for your OK, beside a model of the pipeline drawn to scale](docs/images/desk.png)
@@ -18,6 +20,22 @@ Everything else (leads, contacts, quotes, products, email, web forms, automation
 | Morning Briefing | Leads board |
 | --- | --- |
 | ![Morning Briefing with intake capture, today's figures, agent passports and the ledger head](docs/images/briefing.png) | ![Leads board with the open pipeline drawn to scale above the stage columns](docs/images/leads-board.png) |
+
+## Why Luminara
+
+Most CRMs add AI as a chat box that suggests text, or as an integration that writes to your records with an API key and no one watching. Luminara treats the agent as a colleague with a login.
+
+| | Typical CRM with AI | Luminara |
+| --- | --- | --- |
+| Who the agent acts as | A shared integration key | A real CRM user, with that user's permissions and data scope |
+| Irreversible actions | Run straight away | Wait for a person, are re-checked before they run, and expire after 72 hours |
+| Trying something first | Not possible | Any action can run as a dry run inside a rolled-back database transaction |
+| Proof of what happened | An activity log you have to trust | A signed receipt for every settled call, chained into a ledger anyone can verify |
+| Which agent | The vendor's | Yours: Claude Code, Antigravity, Grokbot or anything that speaks MCP or REST |
+| Where your data goes | The vendor's AI | Nowhere until you add a key, and then only to the service you chose |
+| Licence | Closed, per seat | MIT, self-hosted |
+
+[docs/agents.md](docs/agents.md) shows how to connect an agent in a few minutes.
 
 ## What gets sent to an AI service
 
@@ -79,8 +97,13 @@ Two-factor login is required for admins by default in production.
 
 The full runbook is in [docs/deployment-cloudflare-github.md](docs/deployment-cloudflare-github.md).
 
-## Known limits
+## Beta status and known limits
 
+This is the first public beta (`1.0.0-beta.1`). The core CRM, the agent platform and the approval rules are covered by 578 PHP tests and 200+ browser tests, and every change runs them in CI. Expect rough edges in what is listed here, and please [open an issue](../../issues) when you hit one.
+
+- The development setup ships with a default admin account (`admin@example.com` / `admin123`) and listens on `127.0.0.1` only. Use `compose.prod.yaml` for anything reachable from a network; production refuses to start with the default password.
+- One install serves one business. There is no self-service sign-up yet.
+- In the Docker setup, outgoing mail is written to the log until you set the `MAIL_*` values in `.env`.
 - The Desk loads three.js 0.160.0 from jsDelivr. If you set a Content-Security-Policy that blocks it, or run offline, the Desk falls back to stage bars.
 - `Webkul\Gourwest` is a worked example: a multi-country customer hub written for a fictional hospitality group, with its own demo seeder (`luminara:seed-gourwest`). You can ignore it. Removing it means taking its providers out of `bootstrap/providers.php` and `config/concord.php`.
 

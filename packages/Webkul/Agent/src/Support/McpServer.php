@@ -59,7 +59,7 @@ final class McpServer
                     'resources' => ['subscribe' => false, 'listChanged' => false],
                     'prompts' => ['listChanged' => false],
                 ],
-                'serverInfo' => ['name' => 'luminara-crm', 'version' => core()->version()],
+                'serverInfo' => ['name' => 'luminara-crm', 'version' => core()->luminaraVersion()],
                 'instructions' => 'Tools act on the CRM as the user who owns the token. A result with status '
                     .'pending_approval is waiting for a human; do not repeat the call. '.self::DATA_NOTICE,
             ],

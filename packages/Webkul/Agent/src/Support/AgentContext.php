@@ -27,7 +27,7 @@ final class AgentContext
 
         return [
             'schema_version' => self::SCHEMA_VERSION,
-            'server' => ['name' => 'luminara-crm', 'version' => core()->version()],
+            'server' => ['name' => 'luminara-crm', 'version' => core()->luminaraVersion()],
             'conventions' => [
                 'call' => 'POST /api/agent/actions/{name} with the parameters as a JSON object.',
                 'dry_run' => 'Pass "dry_run": true or header X-Luminara-Dry-Run: 1 to simulate inside a rolled-back savepoint.',

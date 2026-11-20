@@ -56,7 +56,7 @@ class DiscoveryController extends Controller
     {
         return new JsonResponse([
             'name' => 'Luminara CRM',
-            'version' => core()->version(),
+            'version' => core()->luminaraVersion(),
             'description' => 'Agent-native verifiable CRM with savepoint dry-runs, Agent Passports, Edit-to-Teach Playbook Memory, and cryptographic receipts.',
             'protocols' => ['mcp', 'rest', 'cli'],
             'endpoints' => [

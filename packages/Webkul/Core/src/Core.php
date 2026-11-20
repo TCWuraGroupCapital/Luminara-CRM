@@ -21,6 +21,13 @@ class Core
     const KRAYIN_VERSION = '2.2.8';
 
     /**
+     * The Luminara release this build is. Krayin's version above is the base it was forked from.
+     *
+     * @var string
+     */
+    const LUMINARA_VERSION = '1.0.0-beta.1';
+
+    /**
      * Create a new instance.
      *
      * @return void
@@ -39,6 +46,14 @@ class Core
     public function version()
     {
         return static::KRAYIN_VERSION;
+    }
+
+    /**
+     * Get the Luminara release number.
+     */
+    public function luminaraVersion(): string
+    {
+        return static::LUMINARA_VERSION;
     }
 
     /**
