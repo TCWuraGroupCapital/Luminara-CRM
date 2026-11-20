@@ -23,7 +23,13 @@ use Webkul\Workspace\WorkspaceManager;
  * businesses are signed up once and shared by the tests in this file. They are dropped when the
  * process ends, and any left behind by an interrupted run are dropped before the next one starts.
  */
-const WS_PASSWORD = 'Correct-Horse-42-Battery';
+/**
+ * Generated per run, so no password is written into the repository for a secret scanner to
+ * flag. It has upper and lower case, digits and a symbol to satisfy the password rules.
+ */
+if (! defined('WS_PASSWORD')) {
+    define('WS_PASSWORD', 'Ws-'.bin2hex(random_bytes(8)).'-Aa9');
+}
 
 function workspaceManager(): WorkspaceManager
 {

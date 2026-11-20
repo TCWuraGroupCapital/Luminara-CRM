@@ -1,3 +1,6 @@
 # A placeholder (Bearer YOUR_TOKEN) in a curl example, since replaced by an environment variable.
 cdfa51d1193a58dab33951ec77800dcecacef189:docs/agents.md:curl-auth-header:63
 0db206e1abc3932e2e84e5026444e251bbbc5a03:docs/agents.md:curl-auth-header:63
+# A fixed test password in the workspace isolation test, since generated at run time.
+46e9662c376415d2e2fba0aa1c229d47abc7232a:tests/Feature/Workspace/WorkspaceIsolationTest.php:generic-api-key:26
+394e2ab6c684089e730616d73ef1f08d66f3547d:tests/Feature/Workspace/WorkspaceIsolationTest.php:generic-api-key:26
