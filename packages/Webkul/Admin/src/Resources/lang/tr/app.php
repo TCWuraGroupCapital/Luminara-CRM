@@ -338,7 +338,7 @@ return [
         'layouts' => [
             'powered-by' => [
                 'description' => ':webkul tarafından geliştirilen açık kaynaklı bir proje olan :krayin tarafından desteklenmektedir.',
-                'tagline' => 'Gourwest küresel müşteri entegrasyonu',
+                'tagline' => 'İnsanlar ve yapay zekâ ajanları için iş çalışma alanı',
             ],
             'header' => [
                 'mega-search' => [

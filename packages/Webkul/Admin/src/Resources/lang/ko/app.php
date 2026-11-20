@@ -338,7 +338,7 @@ return [
         'layouts' => [
             'powered-by' => [
                 'description' => ':krayin이(가) 제공하는 :webkul의 오픈소스 프로젝트입니다.',
-                'tagline' => 'Gourwest 글로벌 고객 통합 플랫폼',
+                'tagline' => '사람과 AI 에이전트를 위한 비즈니스 워크스페이스',
             ],
             'header' => [
                 'mega-search' => [

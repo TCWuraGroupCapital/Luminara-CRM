@@ -25,7 +25,7 @@ class Core
      *
      * @var string
      */
-    const LUMINARA_VERSION = '1.0.0-beta.1';
+    const LUMINARA_VERSION = '1.0.0-beta.2';
 
     /**
      * Create a new instance.

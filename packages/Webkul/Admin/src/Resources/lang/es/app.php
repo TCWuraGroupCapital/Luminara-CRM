@@ -338,7 +338,7 @@ return [
         'layouts' => [
             'powered-by' => [
                 'description' => 'Desarrollado por :krayin, un proyecto de código abierto de :webkul.',
-                'tagline' => 'Integración global de clientes de Gourwest',
+                'tagline' => 'El espacio de trabajo empresarial para personas y agentes de IA',
             ],
             'header' => [
                 'mega-search' => [

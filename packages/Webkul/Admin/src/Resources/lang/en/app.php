@@ -338,7 +338,7 @@ return [
         'layouts' => [
             'powered-by' => [
                 'description' => 'Powered by :krayin, an open-source project by :webkul.',
-                'tagline' => 'Gourwest global customer integration',
+                'tagline' => 'The business workspace for people and AI agents',
             ],
             'header' => [
                 'mega-search' => [

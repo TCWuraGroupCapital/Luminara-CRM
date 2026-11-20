@@ -1,0 +1,57 @@
+<?php
+
+return [
+    'signup' => [
+        'title' => 'Tạo không gian làm việc của bạn',
+        'intro' => 'Mỗi doanh nghiệp có một không gian riêng. Không có gì được chia sẻ với doanh nghiệp khác.',
+        'business-name' => 'Tên doanh nghiệp',
+        'name' => 'Tên của bạn',
+        'email' => 'Email công việc',
+        'password' => 'Mật khẩu',
+        'password-hint' => 'Ít nhất 12 ký tự, gồm chữ hoa, chữ thường và một chữ số.',
+        'password-confirm' => 'Xác nhận mật khẩu',
+        'invite-code' => 'Mã mời',
+        'submit' => 'Tạo không gian làm việc',
+        'have-account' => 'Đã có tài khoản? Đăng nhập',
+        'link' => 'Bạn mới đến? Tạo không gian làm việc',
+    ],
+    'status' => [
+        'title' => 'Đang thiết lập không gian làm việc',
+        'building' => 'Chúng tôi đang tạo cơ sở dữ liệu riêng cho :name. Thường mất chưa đến một phút.',
+        'ready' => 'Không gian làm việc của bạn đã sẵn sàng.',
+        'ready-next' => 'Đăng nhập bằng email và mật khẩu bạn vừa chọn. Bạn sẽ được yêu cầu thiết lập xác thực hai bước.',
+        'sign-in' => 'Đăng nhập',
+        'failed' => 'Chúng tôi không thể hoàn tất thiết lập không gian làm việc này. Không có gì được lưu lại. Vui lòng thử lại.',
+        'try-again' => 'Bắt đầu lại',
+        'verify-title' => 'Xác nhận địa chỉ email của bạn',
+        'verify-body' => 'Chúng tôi đã gửi một liên kết tới :email. Hãy mở liên kết để hoàn tất việc tạo không gian làm việc. Bạn có thể đóng trang này.',
+        'expired-title' => 'Liên kết này không còn hiệu lực',
+        'expired' => 'Liên kết xác nhận đã hết hạn hoặc đã được sử dụng. Nếu không gian làm việc của bạn đã sẵn sàng, hãy đăng nhập. Nếu chưa, hãy đăng ký lại để nhận liên kết mới.',
+    ],
+    'validation' => [
+        'email-taken' => 'Email này đã có tài khoản. Hãy đăng nhập hoặc dùng địa chỉ khác.',
+        'invite-code' => 'Mã mời không hợp lệ.',
+        'limit' => 'Hiện chúng tôi chưa nhận thêm không gian làm việc mới. Vui lòng thử lại sau.',
+        'mail-failed' => 'Chúng tôi không thể gửi email xác nhận tới địa chỉ này. Hãy kiểm tra và thử lại.',
+    ],
+    'mail' => [
+        'subject' => 'Xác nhận email để tạo không gian làm việc của bạn',
+        'greeting' => 'Xin chào :name,',
+        'intro' => 'Hãy xác nhận địa chỉ email này để hoàn tất việc tạo không gian làm việc cho :business.',
+        'action' => 'Xác nhận địa chỉ email',
+        'expiry' => 'Liên kết này có hiệu lực trong :hours giờ.',
+        'ignore' => 'Nếu bạn không yêu cầu tạo không gian làm việc, hãy bỏ qua email này và sẽ không có gì được tạo.',
+    ],
+    'onboarding' => [
+        'title' => 'Chào mừng đến với :name',
+        'intro' => 'Năm việc nên làm trước tiên.',
+        'dismiss' => 'Ẩn',
+        'steps' => [
+            'lead' => 'Thêm khách hàng tiềm năng đầu tiên',
+            'team' => 'Mời nhóm của bạn',
+            'mfa' => 'Bật đăng nhập hai bước',
+            'form' => 'Xuất bản một biểu mẫu web',
+            'agent' => 'Kết nối một tác nhân AI',
+        ],
+    ],
+];

@@ -114,6 +114,10 @@ class Handler extends ExceptionHandler
             ], $errorCode);
         }
 
-        return response()->view('admin::errors.index', compact('errorCode'));
+        /**
+         * The page is sent with the status it describes. Without it every error, a failed
+         * webhook included, reached the caller as "200 OK".
+         */
+        return response()->view('admin::errors.index', compact('errorCode'), (int) $errorCode);
     }
 }

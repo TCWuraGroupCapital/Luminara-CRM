@@ -85,6 +85,16 @@ docker compose exec app php artisan luminara:act briefing_today --as=admin@examp
 
 Send the bearer token to `/api/agent` or `/api/agent/mcp` (add `X-Luminara-Dry-Run: 1` to preview any action inside a database savepoint without persisting changes). Machine-readable discovery manifests live at `/llms.txt` and `/.well-known/agent.json`. [docs/agents.md](docs/agents.md) walks through connecting Claude Code, Antigravity, Grokbot or any other agent, and what the agent will and won't be allowed to do.
 
+## Host several businesses on one install
+
+Set `LUMINARA_WORKSPACES=true` and each business gets its own database: its leads, contacts, settings, agent passports, agent history and ledger never share a table with another business, so there is no per-query filter to get wrong. It is off by default, and a single-business install behaves exactly as before.
+
+- **Sign-up** at `/signup` is `off`, `invite` (needs `LUMINARA_SIGNUP_INVITE_CODE`) or `open` (`LUMINARA_SIGNUP`). Open sign-up asks the owner to confirm their email first, so it needs working outgoing mail.
+- **Teammates** the owner adds under Settings > Users can sign in straight away. An email address belongs to one business.
+- **Agents** send `X-Luminara-Workspace: <slug>` with their passport token. Public pages such as web forms and receipts get a `/w/<slug>/...` address.
+- **Operators** have `luminara:workspace:create`, `list`, `run "<command>"` (for example `migrate --force` across every business), `suspend`, `delete` and `prune`.
+- The database user needs ``GRANT ALL ON `<DB_DATABASE>\_ws\_%`.*``. Settings are in `.env.example` and `config/workspaces.php`.
+
 ## Run it in production
 
 `compose.prod.yaml` runs the web app, a queue worker, the scheduler, MySQL 8, Redis and an optional Cloudflare Tunnel.
@@ -99,10 +109,10 @@ The full runbook is in [docs/deployment-cloudflare-github.md](docs/deployment-cl
 
 ## Beta status and known limits
 
-This is the first public beta (`1.0.0-beta.1`). The core CRM, the agent platform and the approval rules are covered by 578 PHP tests and 200+ browser tests, and every change runs them in CI. Expect rough edges in what is listed here, and please [open an issue](../../issues) when you hit one.
+This is a public beta (`1.0.0-beta.2`). The core CRM, the agent platform and the approval rules are covered by 578 PHP tests and 200+ browser tests, and every change runs them in CI. Expect rough edges in what is listed here, and please [open an issue](../../issues) when you hit one.
 
 - The development setup ships with a default admin account (`admin@example.com` / `admin123`) and listens on `127.0.0.1` only. Use `compose.prod.yaml` for anything reachable from a network; production refuses to start with the default password.
-- One install serves one business. There is no self-service sign-up yet.
+- Hosting several businesses on one install (below) is new in this beta. The Telegram bot and mini app still serve the main business only.
 - In the Docker setup, outgoing mail is written to the log until you set the `MAIL_*` values in `.env`.
 - The Desk loads three.js 0.160.0 from jsDelivr. If you set a Content-Security-Policy that blocks it, or run offline, the Desk falls back to stage bars.
 - `Webkul\Gourwest` is a worked example: a multi-country customer hub written for a fictional hospitality group, with its own demo seeder (`luminara:seed-gourwest`). You can ignore it. Removing it means taking its providers out of `bootstrap/providers.php` and `config/concord.php`.

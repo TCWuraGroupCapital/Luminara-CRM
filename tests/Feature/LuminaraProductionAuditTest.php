@@ -6,6 +6,12 @@ use Illuminate\Support\Arr;
 use Webkul\Installer\Helpers\DatabaseManager;
 use Webkul\Installer\Http\Middleware\CanInstall;
 
+it('sends error pages with their real status code when debug is off', function () {
+    config(['app.debug' => false]);
+
+    $this->get('/no-such-page-anywhere')->assertStatus(404)->assertSee('404');
+});
+
 it('allows the /up healthcheck endpoint without redirecting even before installation completes', function () {
     $originalStorage = app()->storagePath();
     $tempStorage = sys_get_temp_dir().'/luminara-health-'.bin2hex(random_bytes(6));

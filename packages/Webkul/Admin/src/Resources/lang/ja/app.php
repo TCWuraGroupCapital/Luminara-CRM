@@ -338,7 +338,7 @@ return [
         'layouts' => [
             'powered-by' => [
                 'description' => 'Powered by :krayin — :webkul によるオープンソースプロジェクト',
-                'tagline' => 'Gourwest グローバル顧客統合プラットフォーム',
+                'tagline' => '人とAIエージェントのためのビジネスワークスペース',
             ],
             'header' => [
                 'mega-search' => [

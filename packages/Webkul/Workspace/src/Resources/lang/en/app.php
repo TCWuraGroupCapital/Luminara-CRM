@@ -1,0 +1,57 @@
+<?php
+
+return [
+    'signup' => [
+        'title' => 'Create your workspace',
+        'intro' => 'Each business gets its own private workspace. Nothing is shared with other businesses.',
+        'business-name' => 'Business name',
+        'name' => 'Your name',
+        'email' => 'Work email',
+        'password' => 'Password',
+        'password-hint' => 'At least 12 characters, with upper and lower case letters and a number.',
+        'password-confirm' => 'Confirm password',
+        'invite-code' => 'Invite code',
+        'submit' => 'Create workspace',
+        'have-account' => 'Already have an account? Sign in',
+        'link' => 'New here? Create a workspace',
+    ],
+    'status' => [
+        'title' => 'Setting up your workspace',
+        'building' => 'We are building a private database for :name. This usually takes under a minute.',
+        'ready' => 'Your workspace is ready.',
+        'ready-next' => 'Sign in with the email and password you just chose. You will be asked to set up two-factor sign-in.',
+        'sign-in' => 'Sign in',
+        'failed' => 'We could not finish setting up this workspace. Nothing was kept. Please try again.',
+        'try-again' => 'Start again',
+        'verify-title' => 'Confirm your email address',
+        'verify-body' => 'We sent a link to :email. Open it to finish creating your workspace. You can close this page.',
+        'expired-title' => 'This link is no longer valid',
+        'expired' => 'The confirmation link has expired or was already used. If your workspace is ready, sign in. Otherwise sign up again to get a new link.',
+    ],
+    'validation' => [
+        'email-taken' => 'This email address already has an account. Sign in instead, or use a different address.',
+        'invite-code' => 'That invite code is not valid.',
+        'limit' => 'We are not taking new workspaces right now. Please try again later.',
+        'mail-failed' => 'We could not send a confirmation email to this address. Check it and try again.',
+    ],
+    'mail' => [
+        'subject' => 'Confirm your email to create your workspace',
+        'greeting' => 'Hello :name,',
+        'intro' => 'Confirm this email address to finish creating the workspace for :business.',
+        'action' => 'Confirm email address',
+        'expiry' => 'This link works for :hours hours.',
+        'ignore' => 'If you did not ask for a workspace, ignore this email and nothing will be created.',
+    ],
+    'onboarding' => [
+        'title' => 'Welcome to :name',
+        'intro' => 'Five things worth doing first.',
+        'dismiss' => 'Hide this',
+        'steps' => [
+            'lead' => 'Add your first lead',
+            'team' => 'Invite your team',
+            'mfa' => 'Turn on two-factor sign-in',
+            'form' => 'Publish a web form',
+            'agent' => 'Connect an AI agent',
+        ],
+    ],
+];

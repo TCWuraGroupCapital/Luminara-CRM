@@ -338,7 +338,7 @@ return [
         'layouts' => [
             'powered-by' => [
                 'description' => 'مدعوم من :krayin، وهو مشروع مفتوح المصدر من :webkul.',
-                'tagline' => 'التكامل العالمي لعملاء Gourwest',
+                'tagline' => 'مساحة عمل الأعمال للأشخاص ووكلاء الذكاء الاصطناعي',
             ],
             'header' => [
                 'mega-search' => [

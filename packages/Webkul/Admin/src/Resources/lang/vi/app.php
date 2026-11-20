@@ -338,7 +338,7 @@ return [
         'layouts' => [
             'powered-by' => [
                 'description' => 'Được hỗ trợ bởi :krayin, một dự án mã nguồn mở được phát triển bởi :webkul.',
-                'tagline' => 'Tích hợp khách hàng toàn cầu Gourwest',
+                'tagline' => 'Không gian làm việc kinh doanh cho con người và tác nhân AI',
             ],
             'header' => [
                 'mega-search' => [

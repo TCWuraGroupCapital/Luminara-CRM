@@ -338,7 +338,7 @@ return [
         'layouts' => [
             'powered-by' => [
                 'description' => '由 :krayin 提供支持，这是 :webkul 的开源项目。',
-                'tagline' => 'Gourwest 全球客户整合平台',
+                'tagline' => '面向人与 AI 智能体的业务工作空间',
             ],
             'header' => [
                 'mega-search' => [

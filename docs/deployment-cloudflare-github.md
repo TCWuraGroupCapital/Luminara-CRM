@@ -153,6 +153,25 @@ In Cloudflare Zero Trust (`Networks > Tunnels`):
 
 ---
 
+## 3A. Workspaces: one database per business (optional)
+
+Set `LUMINARA_WORKSPACES=true` to let several businesses use one deployment. Each gets its own database named `<DB_DATABASE>_ws_<id>`; the main database keeps the sign-in directory (`workspaces`, `workspace_members`) and remains the operator's own workspace.
+
+1. Grant the application's database user the right to create those databases, once, as MySQL root:
+   ```sql
+   GRANT ALL PRIVILEGES ON `luminara\_crm\_ws\_%`.* TO 'luminara'@'%';
+   ```
+2. Choose who may sign up at `/signup`: `LUMINARA_SIGNUP=off` (create workspaces yourself), `invite` (visitors need `LUMINARA_SIGNUP_INVITE_CODE`) or `open`. With `open`, a new owner must open a link emailed to them before anything is built (`LUMINARA_SIGNUP_VERIFY_EMAIL`, on by default for `open` and off for `invite`). That needs working outgoing mail: with `MAIL_MAILER=log` the link only reaches the log file, so stay on `invite` until SMTP is configured.
+3. Create one by hand: `LUMINARA_WORKSPACE_PASSWORD='…' php artisan luminara:workspace:create "Acme Bakery" owner@acme.example`.
+4. After every release, migrate the workspaces as well as the main database: `php artisan luminara:workspace:run "migrate --force"`.
+5. Run any command inside one workspace with `LUMINARA_WORKSPACE=<slug> php artisan …`, for example to issue an agent passport. API clients send `X-Luminara-Workspace: <slug>` with their bearer token.
+
+6. Manage businesses: `luminara:workspace:list`; `luminara:workspace:suspend <slug>` signs everyone out and blocks sign-in but keeps the data (`--resume` brings it back); `luminara:workspace:delete <slug> --confirm=<slug>` permanently removes a suspended business's database, files and sign-ins. Take a backup first with `LUMINARA_WORKSPACE=<slug> php artisan luminara:backup` while it is still active.
+
+Public pages of a workspace live under `/w/<slug>/`: web forms, receipt pages, the ledger proof API, experiment beacons and Gourwest webhooks (`/w/<slug>/api/gourwest/webhooks/<system>`). The admin shows these addresses automatically. Requests that arrive this way are always treated as signed-out visitors.
+
+Limits to know: the Telegram bot and mini app only serve the main workspace, and an email address can belong to one business.
+
 ## 4. Backups, Disaster Recovery & Operations
 
 - **Automated Daily & Hourly Schedule (`scheduler` container):**

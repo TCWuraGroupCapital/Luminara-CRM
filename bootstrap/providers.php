@@ -30,6 +30,7 @@ use Webkul\Tma\Providers\TmaServiceProvider;
 use Webkul\User\Providers\UserServiceProvider;
 use Webkul\Warehouse\Providers\WarehouseServiceProvider;
 use Webkul\WebForm\Providers\WebFormServiceProvider;
+use Webkul\Workspace\Providers\WorkspaceServiceProvider;
 
 return [
     /*
@@ -73,4 +74,5 @@ return [
     UserServiceProvider::class,
     WarehouseServiceProvider::class,
     WebFormServiceProvider::class,
+    WorkspaceServiceProvider::class,
 ];

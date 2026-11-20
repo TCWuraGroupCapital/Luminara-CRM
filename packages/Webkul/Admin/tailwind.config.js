@@ -7,6 +7,7 @@ module.exports = {
         "./src/Resources/**/*.js",
         "../Experiment/src/Resources/**/*.blade.php",
         "../Security/src/Resources/**/*.blade.php",
+        "../Workspace/src/Resources/**/*.blade.php",
     ],
 
     theme: {

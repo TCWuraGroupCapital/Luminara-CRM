@@ -1,0 +1,57 @@
+<?php
+
+return [
+    'signup' => [
+        'title' => 'Çalışma alanınızı oluşturun',
+        'intro' => 'Her işletmenin kendi özel çalışma alanı vardır. Diğer işletmelerle hiçbir şey paylaşılmaz.',
+        'business-name' => 'İşletme adı',
+        'name' => 'Adınız',
+        'email' => 'İş e-postası',
+        'password' => 'Parola',
+        'password-hint' => 'En az 12 karakter; büyük harf, küçük harf ve bir rakam içermelidir.',
+        'password-confirm' => 'Parolayı doğrulayın',
+        'invite-code' => 'Davet kodu',
+        'submit' => 'Çalışma alanı oluştur',
+        'have-account' => 'Zaten hesabınız var mı? Giriş yapın',
+        'link' => 'Yeni misiniz? Çalışma alanı oluşturun',
+    ],
+    'status' => [
+        'title' => 'Çalışma alanınız hazırlanıyor',
+        'building' => ':name için özel bir veritabanı oluşturuyoruz. Bu genellikle bir dakikadan kısa sürer.',
+        'ready' => 'Çalışma alanınız hazır.',
+        'ready-next' => 'Az önce seçtiğiniz e-posta ve parolayla giriş yapın. İki adımlı doğrulamayı kurmanız istenecek.',
+        'sign-in' => 'Giriş yap',
+        'failed' => 'Bu çalışma alanının kurulumu tamamlanamadı. Hiçbir şey saklanmadı. Lütfen yeniden deneyin.',
+        'try-again' => 'Yeniden başla',
+        'verify-title' => 'E-posta adresinizi onaylayın',
+        'verify-body' => ':email adresine bir bağlantı gönderdik. Çalışma alanınızı oluşturmayı tamamlamak için bağlantıyı açın. Bu sayfayı kapatabilirsiniz.',
+        'expired-title' => 'Bu bağlantı artık geçerli değil',
+        'expired' => 'Onay bağlantısının süresi dolmuş veya bağlantı daha önce kullanılmış. Çalışma alanınız hazırsa giriş yapın. Değilse yeni bir bağlantı almak için yeniden kaydolun.',
+    ],
+    'validation' => [
+        'email-taken' => 'Bu e-posta adresinin zaten bir hesabı var. Giriş yapın veya başka bir adres kullanın.',
+        'invite-code' => 'Bu davet kodu geçerli değil.',
+        'limit' => 'Şu anda yeni çalışma alanı kabul etmiyoruz. Lütfen daha sonra yeniden deneyin.',
+        'mail-failed' => 'Bu adrese onay e-postası gönderemedik. Adresi kontrol edip yeniden deneyin.',
+    ],
+    'mail' => [
+        'subject' => 'Çalışma alanınızı oluşturmak için e-postanızı onaylayın',
+        'greeting' => 'Merhaba :name,',
+        'intro' => ':business çalışma alanını oluşturmayı tamamlamak için bu e-posta adresini onaylayın.',
+        'action' => 'E-posta adresini onayla',
+        'expiry' => 'Bu bağlantı :hours saat geçerlidir.',
+        'ignore' => 'Bir çalışma alanı istemediyseniz bu e-postayı yok sayın; hiçbir şey oluşturulmaz.',
+    ],
+    'onboarding' => [
+        'title' => ':name çalışma alanına hoş geldiniz',
+        'intro' => 'İlk yapmaya değer beş şey.',
+        'dismiss' => 'Gizle',
+        'steps' => [
+            'lead' => 'İlk potansiyel müşterinizi ekleyin',
+            'team' => 'Ekibinizi davet edin',
+            'mfa' => 'İki adımlı girişi açın',
+            'form' => 'Bir web formu yayınlayın',
+            'agent' => 'Bir yapay zekâ ajanı bağlayın',
+        ],
+    ],
+];

@@ -10,6 +10,7 @@ COPY public public
 COPY packages/Webkul/Admin packages/Webkul/Admin
 COPY packages/Webkul/Experiment/src/Resources packages/Webkul/Experiment/src/Resources
 COPY packages/Webkul/Security/src/Resources packages/Webkul/Security/src/Resources
+COPY packages/Webkul/Workspace/src/Resources packages/Webkul/Workspace/src/Resources
 COPY packages/Webkul/Installer packages/Webkul/Installer
 COPY packages/Webkul/WebForm packages/Webkul/WebForm
 RUN cd packages/Webkul/Admin && npm run build \

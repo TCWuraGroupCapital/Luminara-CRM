@@ -1,0 +1,57 @@
+<?php
+
+return [
+    'signup' => [
+        'title' => 'Crie seu espaço de trabalho',
+        'intro' => 'Cada empresa tem seu próprio espaço privado. Nada é compartilhado com outras empresas.',
+        'business-name' => 'Nome da empresa',
+        'name' => 'Seu nome',
+        'email' => 'E-mail de trabalho',
+        'password' => 'Senha',
+        'password-hint' => 'Pelo menos 12 caracteres, com letras maiúsculas, minúsculas e um número.',
+        'password-confirm' => 'Confirmar senha',
+        'invite-code' => 'Código de convite',
+        'submit' => 'Criar espaço de trabalho',
+        'have-account' => 'Já tem uma conta? Entrar',
+        'link' => 'Novo por aqui? Crie um espaço de trabalho',
+    ],
+    'status' => [
+        'title' => 'Preparando seu espaço de trabalho',
+        'building' => 'Estamos criando um banco de dados privado para :name. Normalmente leva menos de um minuto.',
+        'ready' => 'Seu espaço de trabalho está pronto.',
+        'ready-next' => 'Entre com o e-mail e a senha que você acabou de escolher. Você deverá configurar a verificação em duas etapas.',
+        'sign-in' => 'Entrar',
+        'failed' => 'Não conseguimos concluir a preparação deste espaço de trabalho. Nada foi guardado. Tente novamente.',
+        'try-again' => 'Começar de novo',
+        'verify-title' => 'Confirme seu e-mail',
+        'verify-body' => 'Enviamos um link para :email. Abra-o para concluir a criação do seu espaço de trabalho. Você pode fechar esta página.',
+        'expired-title' => 'Este link não é mais válido',
+        'expired' => 'O link de confirmação expirou ou já foi usado. Se o seu espaço de trabalho estiver pronto, entre. Caso contrário, cadastre-se novamente para receber um novo link.',
+    ],
+    'validation' => [
+        'email-taken' => 'Este e-mail já tem uma conta. Entre ou use outro endereço.',
+        'invite-code' => 'Esse código de convite não é válido.',
+        'limit' => 'No momento não estamos aceitando novos espaços de trabalho. Tente mais tarde.',
+        'mail-failed' => 'Não foi possível enviar um e-mail de confirmação para este endereço. Verifique-o e tente novamente.',
+    ],
+    'mail' => [
+        'subject' => 'Confirme seu e-mail para criar seu espaço de trabalho',
+        'greeting' => 'Olá, :name,',
+        'intro' => 'Confirme este endereço de e-mail para concluir a criação do espaço de trabalho de :business.',
+        'action' => 'Confirmar e-mail',
+        'expiry' => 'Este link funciona por :hours horas.',
+        'ignore' => 'Se você não pediu um espaço de trabalho, ignore este e-mail e nada será criado.',
+    ],
+    'onboarding' => [
+        'title' => 'Boas-vindas a :name',
+        'intro' => 'Cinco coisas que vale a pena fazer primeiro.',
+        'dismiss' => 'Ocultar',
+        'steps' => [
+            'lead' => 'Adicione seu primeiro lead',
+            'team' => 'Convide sua equipe',
+            'mfa' => 'Ative o login em duas etapas',
+            'form' => 'Publique um formulário web',
+            'agent' => 'Conecte um agente de IA',
+        ],
+    ],
+];
