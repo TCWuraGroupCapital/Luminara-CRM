@@ -6,10 +6,13 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Webkul\Email\Mails\Concerns\SendsAsBusiness;
 use Webkul\Marketing\Contracts\Campaign;
 
 class CampaignMail extends Mailable
 {
+    use SendsAsBusiness;
+
     /**
      * Create a new message instance.
      *

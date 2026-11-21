@@ -4,6 +4,8 @@ namespace Webkul\Email\Console\Commands;
 
 use Illuminate\Console\Command;
 use Webkul\Email\InboundEmailProcessor\Contracts\InboundEmailProcessor;
+use Webkul\Email\InboundEmailProcessor\WebklexImapEmailProcessor;
+use Webkul\Email\Support\BusinessInbox;
 
 class ProcessInboundEmails extends Command
 {
@@ -22,27 +24,31 @@ class ProcessInboundEmails extends Command
     protected $description = 'This command will process the incoming emails from the mail server.';
 
     /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct(
-        protected InboundEmailProcessor $inboundEmailProcessor
-    ) {
-        parent::__construct();
-    }
-
-    /**
      * Handle.
-     *
-     * @return void
      */
-    public function handle()
+    public function handle(BusinessInbox $inbox): int
     {
+        /**
+         * Runs for the main database and, through luminara:workspace:run, for every business;
+         * most have no mailbox to read. The processor is built here, not in the constructor,
+         * because building it opens the IMAP connection.
+         */
+        if (! $inbox->shouldPoll()) {
+            $this->line('No mailbox to read.');
+
+            return self::SUCCESS;
+        }
+
         $this->info('Processing the incoming emails.');
 
-        $this->inboundEmailProcessor->processMessagesFromAllFolders();
+        $processor = $inbox->hasOwnAccount()
+            ? $this->laravel->make(WebklexImapEmailProcessor::class)
+            : $this->laravel->make(InboundEmailProcessor::class);
+
+        $processor->processMessagesFromAllFolders();
 
         $this->info('Incoming emails processed successfully.');
+
+        return self::SUCCESS;
     }
 }

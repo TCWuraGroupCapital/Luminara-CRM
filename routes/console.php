@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use Webkul\Email\Support\BusinessInbox;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,7 +23,7 @@ Artisan::command('inspire', function () {
 Schedule::command('inbound-emails:process')
     ->everyFiveMinutes()
     ->withoutOverlapping(10)
-    ->when(fn () => config('mail-receiver.default') === 'webklex-imap');
+    ->when(fn () => config('mail-receiver.default') === 'webklex-imap' || app(BusinessInbox::class)->hasOwnAccount());
 
 Schedule::command('luminara:backup')
     ->dailyAt('02:00')

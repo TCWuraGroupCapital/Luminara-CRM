@@ -199,6 +199,10 @@ class WorkspaceServiceProvider extends ServiceProvider
     {
         $this->callAfterResolving(Schedule::class, static function (Schedule $schedule): void {
             $schedule->command('luminara:workspace:run', ['luminara:ledger-seal'])->hourlyAt(7)->withoutOverlapping(20)->when(static fn (): bool => (bool) config('workspaces.enabled'));
+            /**
+             * Each business reads replies from its own mailbox, when it has saved one.
+             */
+            $schedule->command('luminara:workspace:run', ['inbound-emails:process'])->everyFiveMinutes()->withoutOverlapping(10)->when(static fn (): bool => (bool) config('workspaces.enabled'));
             $schedule->command('luminara:workspace:prune')->hourlyAt(37)->when(static fn (): bool => (bool) config('workspaces.enabled'));
             $schedule->command('luminara:workspace:run', ['luminara:backup'])->dailyAt('02:10')->withoutOverlapping(60)->when(static fn (): bool => (bool) config('workspaces.enabled'));
         });

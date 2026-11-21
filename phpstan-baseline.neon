@@ -393,7 +393,7 @@ parameters:
 		-
 			message: '#^Method Webkul\\Admin\\Http\\Controllers\\Lead\\QuoteController\:\:mail\(\) should return Illuminate\\Http\\Response but returns Illuminate\\Http\\JsonResponse\.$#'
 			identifier: return.type
-			count: 4
+			count: 5
 			path: packages/Webkul/Admin/src/Http/Controllers/Lead/QuoteController.php
 
 		-
@@ -453,25 +453,25 @@ parameters:
 		-
 			message: '#^Method Webkul\\Admin\\Http\\Controllers\\Mail\\EmailController\:\:store\(\) should return Illuminate\\Http\\Response but returns Illuminate\\Http\\JsonResponse\.$#'
 			identifier: return.type
-			count: 1
+			count: 2
 			path: packages/Webkul/Admin/src/Http/Controllers/Mail/EmailController.php
 
 		-
 			message: '#^Method Webkul\\Admin\\Http\\Controllers\\Mail\\EmailController\:\:store\(\) should return Illuminate\\Http\\Response but returns Illuminate\\Http\\RedirectResponse\.$#'
 			identifier: return.type
-			count: 2
+			count: 3
 			path: packages/Webkul/Admin/src/Http/Controllers/Mail/EmailController.php
 
 		-
 			message: '#^Method Webkul\\Admin\\Http\\Controllers\\Mail\\EmailController\:\:update\(\) should return Illuminate\\Http\\Response but returns Illuminate\\Http\\JsonResponse\.$#'
 			identifier: return.type
-			count: 1
+			count: 2
 			path: packages/Webkul/Admin/src/Http/Controllers/Mail/EmailController.php
 
 		-
 			message: '#^Method Webkul\\Admin\\Http\\Controllers\\Mail\\EmailController\:\:update\(\) should return Illuminate\\Http\\Response but returns Illuminate\\Http\\RedirectResponse\.$#'
 			identifier: return.type
-			count: 3
+			count: 4
 			path: packages/Webkul/Admin/src/Http/Controllers/Mail/EmailController.php
 
 		-

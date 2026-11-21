@@ -357,16 +357,75 @@ return [
                 'default' => config('imap.accounts.default.validate_cert'),
             ],
             [
+                /**
+                 * No default from IMAP_USERNAME / IMAP_PASSWORD: this screen prints its values into
+                 * the page, and every hosted business would see the server's mailbox login.
+                 * WebklexImapEmailProcessor still falls back to them on a single-business install.
+                 */
                 'name' => 'username',
                 'title' => 'admin::app.configuration.index.email.imap.account.username',
                 'type' => 'text',
-                'default' => config('imap.accounts.default.username'),
             ],
             [
                 'name' => 'password',
                 'title' => 'admin::app.configuration.index.email.imap.account.password',
                 'type' => 'password',
-                'default' => config('imap.accounts.default.password'),
+            ],
+        ],
+    ], [
+        /**
+         * The business's own outgoing account, used by Webkul\Email\Support\BusinessMailer for email
+         * to leads and contacts. No defaults from the server's .env on purpose: a hosted business
+         * must never see or fall back to the operator's mailbox.
+         */
+        'key' => 'email.smtp',
+        'name' => 'admin::app.configuration.index.email.smtp.title',
+        'info' => 'admin::app.configuration.index.email.smtp.info',
+        'icon' => 'icon-setting',
+        'sort' => 0,
+    ], [
+        'key' => 'email.smtp.account',
+        'name' => 'admin::app.configuration.index.email.smtp.account.title',
+        'info' => 'admin::app.configuration.index.email.smtp.account.title-info',
+        'sort' => 1,
+        'fields' => [
+            [
+                'name' => 'from_name',
+                'title' => 'admin::app.configuration.index.email.smtp.account.from-name',
+                'type' => 'text',
+                'validation' => 'max:120',
+            ], [
+                'name' => 'from_address',
+                'title' => 'admin::app.configuration.index.email.smtp.account.from-address',
+                'info' => 'admin::app.configuration.index.email.smtp.account.from-address-info',
+                'type' => 'text',
+                'validation' => 'max:255',
+            ], [
+                'name' => 'host',
+                'title' => 'admin::app.configuration.index.email.smtp.account.host',
+                'info' => 'admin::app.configuration.index.email.smtp.account.host-info',
+                'type' => 'text',
+                'validation' => 'max:255',
+            ], [
+                'name' => 'port',
+                'title' => 'admin::app.configuration.index.email.smtp.account.port',
+                'info' => 'admin::app.configuration.index.email.smtp.account.port-info',
+                'type' => 'text',
+                'validation' => 'max:5',
+            ], [
+                'name' => 'username',
+                'title' => 'admin::app.configuration.index.email.smtp.account.username',
+                'type' => 'text',
+            ], [
+                'name' => 'password',
+                'title' => 'admin::app.configuration.index.email.smtp.account.password',
+                'info' => 'admin::app.configuration.index.email.smtp.account.password-info',
+                'type' => 'password',
+            ], [
+                'name' => 'test',
+                'title' => 'admin::app.configuration.index.email.smtp.account.test',
+                'type' => 'blade',
+                'path' => 'admin::configuration.email.smtp-test',
             ],
         ],
     ],

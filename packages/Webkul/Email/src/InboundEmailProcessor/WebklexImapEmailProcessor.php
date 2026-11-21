@@ -11,6 +11,7 @@ use Webkul\Email\Helpers\HtmlFilter;
 use Webkul\Email\InboundEmailProcessor\Contracts\InboundEmailProcessor;
 use Webkul\Email\Repositories\AttachmentRepository;
 use Webkul\Email\Repositories\EmailRepository;
+use Webkul\Email\Support\BusinessInbox;
 
 class WebklexImapEmailProcessor implements InboundEmailProcessor
 {
@@ -223,20 +224,6 @@ class WebklexImapEmailProcessor implements InboundEmailProcessor
      */
     protected function getDefaultConfigs(): array
     {
-        $defaultConfig = config('imap.accounts.default');
-
-        $defaultConfig['host'] = core()->getConfigData('email.imap.account.host') ?: $defaultConfig['host'];
-
-        $defaultConfig['port'] = core()->getConfigData('email.imap.account.port') ?: $defaultConfig['port'];
-
-        $defaultConfig['encryption'] = core()->getConfigData('email.imap.account.encryption') ?: $defaultConfig['encryption'];
-
-        $defaultConfig['validate_cert'] = (bool) core()->getConfigData('email.imap.account.validate_cert');
-
-        $defaultConfig['username'] = core()->getConfigData('email.imap.account.username') ?: $defaultConfig['username'];
-
-        $defaultConfig['password'] = core()->getConfigData('email.imap.account.password') ?: $defaultConfig['password'];
-
-        return $defaultConfig;
+        return app(BusinessInbox::class)->clientConfig((array) config('imap.accounts.default'));
     }
 }

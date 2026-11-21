@@ -3,9 +3,12 @@
 namespace Webkul\Admin\Notifications;
 
 use Illuminate\Mail\Mailable;
+use Webkul\Email\Mails\Concerns\SendsAsBusiness;
 
 class Common extends Mailable
 {
+    use SendsAsBusiness;
+
     /**
      * Create a new notification instance.
      *

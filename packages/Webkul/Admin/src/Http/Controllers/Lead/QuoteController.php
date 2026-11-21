@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Mail;
 use Mpdf\Mpdf;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Admin\Notifications\Common;
+use Webkul\Email\Exceptions\BusinessMailNotConfigured;
+use Webkul\Email\Exceptions\UnsafeSmtpHost;
 use Webkul\Lead\Repositories\LeadRepository;
 use Webkul\Quote\Repositories\QuoteRepository;
 
@@ -133,7 +135,13 @@ class QuoteController extends Controller
             return response()->json([
                 'message' => trans('admin::app.mail.create-success'),
             ], 200);
+        } catch (BusinessMailNotConfigured|UnsafeSmtpHost $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], 422);
         } catch (\Throwable $exception) {
+            report($exception);
+
             return response()->json([
                 'message' => trans('admin::app.leads.view.quotes.mail-send-failed'),
             ], 500);

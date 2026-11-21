@@ -5,6 +5,7 @@ namespace Webkul\Email\Repositories;
 use Illuminate\Container\Container;
 use Webkul\Core\Eloquent\Repository;
 use Webkul\Email\Contracts\Email;
+use Webkul\Email\Support\BusinessMailer;
 
 class EmailRepository extends Repository
 {
@@ -70,7 +71,7 @@ class EmailRepository extends Repository
 
         $data = $this->sanitizeEmails(array_merge([
             'source' => 'web',
-            'from' => config('mail.from.address'),
+            'from' => app(BusinessMailer::class)->fromAddress(),
             'user_type' => 'admin',
             'folders' => isset($data['is_draft']) ? ['draft'] : ['outbox'],
             'unique_id' => $uniqueId,

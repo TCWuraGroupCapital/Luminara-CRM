@@ -10,7 +10,9 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Throwable;
 use Webkul\Admin\DataGrids\Mail\EmailDataGrid;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Admin\Http\Requests\MassDestroyRequest;
@@ -19,6 +21,8 @@ use Webkul\Admin\Http\Resources\EmailResource;
 use Webkul\Admin\Traits\ScopesMailAccess;
 use Webkul\Contact\Repositories\PersonRepository;
 use Webkul\Email\Enums\SupportedFolderEnum;
+use Webkul\Email\Exceptions\BusinessMailNotConfigured;
+use Webkul\Email\Exceptions\UnsafeSmtpHost;
 use Webkul\Email\InboundEmailProcessor\Contracts\InboundEmailProcessor;
 use Webkul\Email\Mails\Email;
 use Webkul\Email\Repositories\AttachmentRepository;
@@ -174,18 +178,26 @@ class EmailController extends Controller
 
         $email = $this->emailRepository->create(request()->all());
 
-        if (! request('is_draft')) {
-            try {
-                Mail::send(new Email($email));
+        $sendError = null;
 
-                $this->emailRepository->update([
-                    'folders' => [SupportedFolderEnum::SENT->value],
-                ], $email->id);
-            } catch (Exception $e) {
-            }
+        if (! request('is_draft')) {
+            $sendError = $this->deliver($email, [SupportedFolderEnum::SENT->value]);
         }
 
         Event::dispatch('email.create.after', $email);
+
+        if ($sendError !== null) {
+            if (request()->ajax()) {
+                return response()->json([
+                    'data' => new EmailResource($this->emailRepository->find($email->id)),
+                    'message' => $sendError,
+                ], 422);
+            }
+
+            session()->flash('error', $sendError);
+
+            return redirect()->route('admin.mail.index', ['route' => SupportedFolderEnum::OUTBOX->value]);
+        }
 
         if (request()->ajax()) {
             return response()->json([
@@ -235,15 +247,23 @@ class EmailController extends Controller
 
         Event::dispatch('email.update.after', $email);
 
-        if (! is_null(request('is_draft')) && ! request('is_draft')) {
-            try {
-                Mail::send(new Email($email));
+        $sendError = null;
 
-                $this->emailRepository->update([
-                    'folders' => [SupportedFolderEnum::INBOX->value, SupportedFolderEnum::SENT->value],
-                ], $email->id);
-            } catch (Exception $e) {
+        if (! is_null(request('is_draft')) && ! request('is_draft')) {
+            $sendError = $this->deliver($email, [SupportedFolderEnum::INBOX->value, SupportedFolderEnum::SENT->value]);
+        }
+
+        if ($sendError !== null) {
+            if (request()->ajax()) {
+                return response()->json([
+                    'data' => new EmailResource($this->emailRepository->find($email->id)),
+                    'message' => $sendError,
+                ], 422);
             }
+
+            session()->flash('error', $sendError);
+
+            return redirect()->route('admin.mail.index', ['route' => SupportedFolderEnum::OUTBOX->value]);
         }
 
         if (! is_null(request('is_draft'))) {
@@ -268,6 +288,33 @@ class EmailController extends Controller
         session()->flash('success', trans('admin::app.mail.update-success'));
 
         return redirect()->back();
+    }
+
+    /**
+     * Send an email and file it in the given folders. Returns why it was not sent, or null.
+     *
+     * A failed send used to be swallowed, so the screen said "sent" while the email sat in the
+     * outbox. Now it stays in the outbox and the person is told why.
+     *
+     * @param  list<string>  $folders
+     */
+    protected function deliver($email, array $folders): ?string
+    {
+        try {
+            Mail::send(new Email($email));
+        } catch (BusinessMailNotConfigured|UnsafeSmtpHost $exception) {
+            return $exception->getMessage();
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return trans('admin::app.mail.not-sent', [
+                'reason' => Str::limit(trim(strtok($exception->getMessage(), "\n") ?: ''), 200),
+            ]);
+        }
+
+        $this->emailRepository->update(['folders' => $folders], $email->id);
+
+        return null;
     }
 
     /**

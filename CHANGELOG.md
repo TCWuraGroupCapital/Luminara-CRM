@@ -4,6 +4,17 @@ This changelog consists of the bug & security fixes and new features being inclu
 
 ## **v2.2.9 (Upcoming)**
 
+* [release] **1.0.0-beta.3** ships per-business email (below): each business sends through its own SMTP account and reads replies from its own mailbox, and a hosted business can no longer send through the operator's mailbox.
+
+* [feature] Each business sends its own email. Settings > Configuration > Email > Outgoing mail takes the business's SMTP account (server, port, username, encrypted password, sender name and address), with a "Send test email" button that mails the signed-in person.
+    * Composed emails and replies, quotes, automation emails and campaigns go out through that account, from the business's own address. Replies to composed emails go back to that address.
+    * A hosted business (any workspace other than the main one) without an account of its own cannot send. It never falls back to the server's `MAIL_*` mailbox. A single-business install, and the main business of a multi-business one, keep using `MAIL_*` until they save an account.
+    * A hosted business's mail server must resolve to public addresses only and use port 25, 465, 587 or 2525. The connection goes to the checked address, so the name cannot be re-pointed at the server's own network in between.
+    * A composed email that fails to send now stays in the outbox with the reason shown. Before, the failure was hidden and the screen said it was sent.
+    * Each business reads replies from its own IMAP mailbox (Settings > Configuration > Email > IMAP): `inbound-emails:process` now runs for every workspace every five minutes, and only reads a mailbox the business saved itself, never the server's `IMAP_*` values.
+    * [security] The IMAP settings screen no longer pre-fills the username and password from `IMAP_USERNAME` / `IMAP_PASSWORD`. The screen prints its values into the page, so every hosted business could read the server's mailbox login.
+    * Strings are present in all 10 locales.
+
 * [feature] Off-site backups and a restore drill.
     * The optional `backup-sync` service in `compose.prod.yaml` (`--profile offsite`, pinned to `rclone/rclone:1.68.2`) copies `storage/app` to any S3-compatible bucket every hour. That covers the database backups of every workspace and the uploaded files.
     * Files are encrypted on the host first (`rclone crypt`), so the bucket sees neither names nor contents. The service only ever copies, so a deletion on the host cannot remove the off-site copy, and off-site archives are pruned after `BACKUP_OFFSITE_RETENTION_DAYS` (35).
