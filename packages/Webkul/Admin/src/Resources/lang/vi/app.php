@@ -2542,6 +2542,18 @@ return [
             'description' => 'Rất tiếc! Trang bạn đang tìm kiếm hiện không có ở đây. Có vẻ như chúng tôi không thể tìm thấy những gì bạn đang tìm kiếm.',
             'title' => '404 Không Tìm Thấy Trang',
         ],
+        '400' => [
+            'description' => 'Không thể xử lý yêu cầu. Hãy quay lại và thử lại.',
+            'title' => '400 Yêu cầu không hợp lệ',
+        ],
+        '419' => [
+            'description' => 'Trang được mở quá lâu và phiên làm việc đã hết hạn. Hãy tải lại trang và thử lại.',
+            'title' => '419 Trang đã hết hạn',
+        ],
+        '429' => [
+            'description' => 'Có quá nhiều lần thử trong thời gian ngắn. Hãy đợi một phút rồi thử lại.',
+            'title' => '429 Quá nhiều yêu cầu',
+        ],
         '401' => [
             'description' => 'Rất tiếc! Có vẻ như bạn không được phép truy cập vào trang này. Có vẻ bạn đang thiếu thông tin xác thực cần thiết.',
             'title' => '401 Không Được Phép',

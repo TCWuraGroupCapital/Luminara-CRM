@@ -27,6 +27,7 @@ use Webkul\Privacy\Providers\PrivacyServiceProvider;
 use Webkul\Product\Providers\ProductServiceProvider;
 use Webkul\Quote\Providers\QuoteServiceProvider;
 use Webkul\Security\Providers\SecurityServiceProvider;
+use Webkul\Sso\Providers\SsoServiceProvider;
 use Webkul\Tag\Providers\TagServiceProvider;
 use Webkul\Tma\Providers\TmaServiceProvider;
 use Webkul\User\Providers\UserServiceProvider;
@@ -79,4 +80,5 @@ return [
     WarehouseServiceProvider::class,
     WebFormServiceProvider::class,
     WorkspaceServiceProvider::class,
+    SsoServiceProvider::class,
 ];

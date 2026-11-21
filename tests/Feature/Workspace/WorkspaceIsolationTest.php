@@ -1,12 +1,16 @@
 <?php
 
+use Firebase\JWT\JWT;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Webkul\Agent\Http\Middleware\AuthenticateAgentToken;
 use Webkul\Contact\Models\Person;
+use Webkul\Sso\Http\Controllers\SsoController;
 use Webkul\User\Models\Role;
 use Webkul\User\Models\User;
 use Webkul\Workspace\Jobs\ProvisionWorkspace;
@@ -371,6 +375,65 @@ it('requires and records acceptance of the terms when the legal pages are on', f
         array_map('unlink', glob($legalDir.DIRECTORY_SEPARATOR.'*') ?: []);
         @rmdir($legalDir);
     }
+});
+
+it('signs in through single sign-on into the business the email belongs to, and never into another', function () {
+    [$acme] = businesses();
+
+    Cache::flush();
+    config(['sso.enabled' => true, 'sso.allow_private_issuers' => true]);
+
+    $issuer = 'https://idp.isolation.test';
+    $key = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+    openssl_pkey_export($key, $pem);
+    $rsa = openssl_pkey_get_details($key)['rsa'];
+    $b64 = static fn (string $bin): string => rtrim(strtr(base64_encode($bin), '+/', '-_'), '=');
+    $idToken = null;
+
+    Http::fake([
+        $issuer.'/.well-known/openid-configuration' => Http::response(['issuer' => $issuer, 'authorization_endpoint' => $issuer.'/authorize', 'token_endpoint' => $issuer.'/token', 'jwks_uri' => $issuer.'/jwks']),
+        $issuer.'/jwks' => Http::response(['keys' => [['kty' => 'RSA', 'kid' => 'k', 'alg' => 'RS256', 'n' => $b64($rsa['n']), 'e' => $b64($rsa['e'])]]]),
+        $issuer.'/token' => function () use (&$idToken) {
+            return Http::response(['id_token' => $idToken]);
+        },
+    ]);
+
+    // Acme lists both domains, so only the "belongs to another business" check can stop a Bravo account.
+    workspaceManager()->run($acme, function () use ($issuer): void {
+        foreach (['enabled' => '1', 'issuer' => $issuer, 'client_id' => 'acme-crm', 'client_secret' => 's', 'domains' => 'acme.isolation.test, bravo.isolation.test'] as $name => $value) {
+            DB::table('core_config')->updateOrInsert(['code' => 'general.sso.oidc.'.$name], ['value' => $value, 'created_at' => now(), 'updated_at' => now()]);
+        }
+    });
+
+    $token = static fn (string $email, string $nonce): string => JWT::encode(
+        ['iss' => $issuer, 'aud' => 'acme-crm', 'sub' => 'x', 'email' => $email, 'email_verified' => true, 'nonce' => $nonce, 'iat' => time(), 'exp' => time() + 300],
+        $pem,
+        'RS256',
+        'k'
+    );
+
+    $this->post(route('admin.sso.start'), ['email' => 'owner@acme.isolation.test'])->assertOk();
+    $pending = session(SsoController::SESSION_KEY);
+
+    expect($pending['workspace_id'])->toBe($acme->id);
+
+    $idToken = $token('owner@bravo.isolation.test', $pending['nonce']);
+
+    $this->get(route('admin.sso.callback', ['state' => $pending['state'], 'code' => 'c']))->assertRedirect(route('admin.sso.create'));
+    $this->assertGuest('user');
+
+    workspaceManager()->switchToLandlord();
+    $this->post(route('admin.sso.start'), ['email' => 'owner@acme.isolation.test'])->assertOk();
+    $pending = session(SsoController::SESSION_KEY);
+    $idToken = $token('owner@acme.isolation.test', $pending['nonce']);
+
+    $this->get(route('admin.sso.callback', ['state' => $pending['state'], 'code' => 'c']))->assertRedirect(route('admin.dashboard.index'));
+
+    expect(session(config('workspaces.session_key')))->toBe($acme->id)
+        ->and(auth()->guard('user')->user()->email)->toBe('owner@acme.isolation.test');
+
+    auth()->guard('user')->logout();
+    workspaceManager()->switchToLandlord();
 });
 
 it('runs a queued job in the workspace it was dispatched from', function () {

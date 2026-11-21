@@ -92,6 +92,7 @@
             "Webkul\\Product\\": "packages/Webkul/Product/src",
             "Webkul\\Quote\\": "packages/Webkul/Quote/src",
             "Webkul\\Security\\": "packages/Webkul/Security/src",
+            "Webkul\\Sso\\": "packages/Webkul/Sso/src",
             "Webkul\\Tag\\": "packages/Webkul/Tag/src",
             "Webkul\\Tma\\": "packages/Webkul/Tma/src",
             "Webkul\\User\\": "packages/Webkul/User/src",

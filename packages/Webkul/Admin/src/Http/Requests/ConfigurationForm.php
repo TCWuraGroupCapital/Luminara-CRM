@@ -4,6 +4,8 @@ namespace Webkul\Admin\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ConfigurationForm extends FormRequest
 {
@@ -64,7 +66,7 @@ class ConfigurationForm extends FormRequest
     /**
      * Resolve the validation rule for a configuration field from its registered definition.
      */
-    protected function resolveValidation(string $key): string
+    protected function resolveValidation(string $key): string|array
     {
         $configField = core()->getConfigField($key);
 
@@ -72,6 +74,54 @@ class ConfigurationForm extends FormRequest
             return $this->hasFile($key) ? 'prohibited' : 'nullable';
         }
 
-        return $configField['validation'] ?? 'nullable';
+        $validation = $configField['validation'] ?? 'nullable';
+
+        /**
+         * A single-choice field only accepts one of its own options. Without this, any string
+         * could be stored, and a stored locale that is not a real locale took every page down.
+         */
+        $allowed = $this->allowedOptionValues($configField);
+
+        if ($allowed === null) {
+            return $validation;
+        }
+
+        $rules = is_array($validation) ? $validation : explode('|', $validation);
+
+        if (! in_array('nullable', $rules, true) && ! in_array('required', $rules, true)) {
+            $rules[] = 'nullable';
+        }
+
+        $rules[] = Rule::in($allowed);
+
+        return $rules;
+    }
+
+    /**
+     * The option values of a select or radio field, or null for any other kind of field.
+     *
+     * @param  array<string, mixed>  $configField
+     * @return array<int, string>|null
+     */
+    protected function allowedOptionValues(array $configField): ?array
+    {
+        if (! in_array($configField['type'] ?? null, ['select', 'radio'], true) || empty($configField['options'])) {
+            return null;
+        }
+
+        $options = $configField['options'];
+
+        if (is_string($options)) {
+            [$class, $method] = Str::parseCallback($options);
+
+            $options = app($class)->{$method}();
+        }
+
+        return collect($options)
+            ->map(static fn ($option) => is_array($option) ? ($option['value'] ?? null) : $option)
+            ->filter(static fn ($value) => $value !== null)
+            ->map(static fn ($value) => (string) $value)
+            ->values()
+            ->all();
     }
 }

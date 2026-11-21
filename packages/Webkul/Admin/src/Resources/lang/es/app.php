@@ -2542,6 +2542,18 @@ return [
             'description' => '¡Ups! La página que estás buscando está de vacaciones. Parece que no pudimos encontrar lo que estabas buscando.',
             'title' => '404 Página No Encontrada',
         ],
+        '400' => [
+            'description' => 'No se pudo procesar la solicitud. Vuelve atrás e inténtalo de nuevo.',
+            'title' => '400 Solicitud incorrecta',
+        ],
+        '419' => [
+            'description' => 'La página estuvo abierta demasiado tiempo y tu sesión caducó. Actualiza la página e inténtalo de nuevo.',
+            'title' => '419 Página caducada',
+        ],
+        '429' => [
+            'description' => 'Demasiados intentos en poco tiempo. Espera un minuto e inténtalo de nuevo.',
+            'title' => '429 Demasiadas solicitudes',
+        ],
         '401' => [
             'description' => '¡Ups! Parece que no tienes permiso para acceder a esta página. Parece que te faltan las credenciales necesarias.',
             'title' => '401 No Autorizado',

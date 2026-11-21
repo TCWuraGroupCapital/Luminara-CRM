@@ -1,8 +1,11 @@
 <?php
 
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
+use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Route;
 use Webkul\Installer\Helpers\DatabaseManager;
 use Webkul\Installer\Http\Middleware\CanInstall;
 
@@ -10,6 +13,30 @@ it('sends error pages with their real status code when debug is off', function (
     config(['app.debug' => false]);
 
     $this->get('/no-such-page-anywhere')->assertStatus(404)->assertSee('404');
+});
+
+it('keeps 405, 419 and 429 instead of answering them as server errors', function () {
+    config(['app.debug' => false]);
+
+    Route::middleware('web')->post('/__test/expired-form', fn () => throw new TokenMismatchException('CSRF token mismatch.'));
+    Route::middleware('web')->get('/__test/throttled', fn () => throw new ThrottleRequestsException('Too Many Attempts.', null, ['Retry-After' => '30']));
+
+    $this->get(route('admin.session.destroy'))
+        ->assertStatus(405)
+        ->assertHeader('Allow');
+
+    $this->post('/__test/expired-form')
+        ->assertStatus(419)
+        ->assertSee(trans('admin::app.errors.419.title'));
+
+    $this->get('/__test/throttled')
+        ->assertStatus(429)
+        ->assertHeader('Retry-After', '30')
+        ->assertSee(trans('admin::app.errors.429.title'));
+
+    $this->getJson('/__test/throttled')
+        ->assertStatus(429)
+        ->assertJson(['message' => trans('admin::app.errors.429.title')]);
 });
 
 it('allows the /up healthcheck endpoint without redirecting even before installation completes', function () {

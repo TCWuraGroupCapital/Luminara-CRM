@@ -4,13 +4,11 @@ namespace Webkul\Admin\Exceptions;
 
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Container\Container;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\ValidationException;
-use PDOException;
-use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -76,48 +74,50 @@ class Handler extends ExceptionHandler
      */
     private function renderCustomResponse(Throwable $exception)
     {
-        if ($exception instanceof HttpException) {
-            $statusCode = in_array($exception->getStatusCode(), [401, 403, 404, 503])
-                ? $exception->getStatusCode()
-                : 500;
-
-            return $this->response($statusCode);
-        }
-
         if ($exception instanceof ValidationException) {
             return parent::render(request(), $exception);
         }
 
-        if ($exception instanceof ModelNotFoundException) {
-            return $this->response(404);
-        } elseif ($exception instanceof PDOException || $exception instanceof \ParseError) {
-            return $this->response(500);
-        } else {
-            return $this->response(500);
+        /**
+         * Laravel's own mapping first: an expired CSRF token becomes 419, a missing model 404, a
+         * failed policy 403. Then every HTTP error keeps its real status and headers (Allow on
+         * 405, Retry-After on 429). Before, anything but 401/403/404/503, a rate limit and an
+         * expired form included, was answered as a server error.
+         */
+        $exception = $this->prepareException($exception);
+
+        if ($exception instanceof HttpExceptionInterface) {
+            return $this->response($exception->getStatusCode(), $exception->getHeaders());
         }
+
+        return $this->response(500);
     }
+
+    /**
+     * Status codes the error page has its own wording for; others show the nearest general page.
+     */
+    private const PAGES = [400, 401, 403, 404, 419, 429, 500, 503];
 
     /**
      * Return custom response.
      *
-     * @param  string  $path
-     * @param  string  $errorCode
+     * @param  array<string, string>  $headers
      * @return mixed
      */
-    private function response($errorCode)
+    private function response(int $status, array $headers = [])
     {
+        $errorCode = in_array($status, self::PAGES, true) ? $status : ($status >= 500 ? 500 : 400);
+
         if (request()->expectsJson()) {
             return response()->json([
-                'message' => isset($this->jsonErrorMessages[$errorCode])
-                    ? $this->jsonErrorMessages[$errorCode]
-                    : trans('admin::app.common.something-went-wrong'),
-            ], $errorCode);
+                'message' => trans("admin::app.errors.{$errorCode}.title"),
+            ], $status, $headers);
         }
 
         /**
          * The page is sent with the status it describes. Without it every error, a failed
          * webhook included, reached the caller as "200 OK".
          */
-        return response()->view('admin::errors.index', compact('errorCode'), (int) $errorCode);
+        return response()->view('admin::errors.index', compact('errorCode'), $status, $headers);
     }
 }

@@ -4,6 +4,23 @@ This changelog consists of the bug & security fixes and new features being inclu
 
 ## **v2.2.9 (Upcoming)**
 
+* [feature] Added `Webkul\Sso`: single sign-on through any OpenID Connect provider, behind `LUMINARA_SSO` (off by default). Set-up for Google Workspace is in `docs/sso-google-workspace.md`.
+    * Each business enters its own provider under Settings > Configuration > Single sign-on: issuer, client ID, encrypted client secret, email domains, "require single sign-on for these domains" and "the provider enforces two-factor sign-in".
+    * Sign-in is email-first. The work email picks the business, as it does for passwords, and only existing, active users of that business can sign in.
+    * The flow uses PKCE, a single-use state that expires after 10 minutes, and a nonce. The ID token's signature is checked against the provider's published keys, along with its issuer, audience and authorized party, expiry, nonce and verified email. The domain is checked against the business's list, plus Google's `hd` claim, so personal Gmail accounts are refused. The email must belong to that same business.
+    * Provider addresses must be HTTPS on public hosts, and connections are pinned to the checked address.
+    * With "require" on, password sign-in for those domains is refused before the password is checked. The CRM's own second factor is skipped only when the token reports MFA (`amr`), or when an administrator says the provider enforces it.
+    * Every sign-in and every refusal goes to the security audit log. Strings are present in all 10 locales.
+
+* [fixed] Erasing a person now deletes their email activities instead of keeping deal-linked ones with the sender and recipients blanked, which the activity timeline cannot display.
+
+* [security] Fonts are now served from the CRM itself instead of Google Fonts, so a visitor's IP address is no longer sent to Google when they open the admin, the sign-in page, a web form or the installer. IBM Plex Sans/Mono/Sans Arabic, Poppins and DM Serif Display come from `@fontsource` (SIL Open Font License 1.1, pinned to 5.3.0) and are bundled by Vite. Browsers download only the character sets a page uses. The look is unchanged, and the OWASP ZAP "Sub Resource Integrity Attribute Missing" warning on these pages is gone.
+
+* [security] Fixed three problems found by an authenticated OWASP ZAP scan of a throwaway production-image stack (2,001 pages crawled and attacked; no injection or access-control failures).
+    * The locale setting accepted any text. The scanner saved `c:/Windows/system.ini`, and from then on every page, the sign-in page included, failed with "Invalid characters present in locale". Single-choice settings (select and radio) now accept only their own options, and the locale middleware applies a stored locale only if the app ships it, so a bad value can no longer take the CRM offline.
+    * Error pages turned every HTTP error other than 401/403/404/503 into a 500. Rate limits (429, now with `Retry-After`), expired forms (419), wrong methods (405, with `Allow`) and other client errors now keep their real status and headers, in both HTML and JSON.
+    * The error page gains wording for 400, 419 and 429 in all 10 locales.
+
 * [security] Added `ContentSecurityPolicy` middleware (`SECURITY_CSP=enforce|report-only|off`) sending a default `Content-Security-Policy` on HTML pages while allowing Telegram WebApp framing/script on `/tma*` and preserving embeddable `/web-forms/forms/*/form.html`.
 
 * [feature] Added `Webkul\Privacy`: personal-data export and erasure for contacts (Australian Privacy Principle 11.2 / GDPR Art. 17), with attested ledger redaction.

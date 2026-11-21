@@ -2549,6 +2549,18 @@ return [
             'description' => 'Oops! The page you\'re looking for is on vacation. It seems we couldn\'t find what you were searching for.',
             'title' => '404 Page Not Found',
         ],
+        '400' => [
+            'description' => 'The request couldn\'t be understood. Go back and try again.',
+            'title' => '400 Bad Request',
+        ],
+        '419' => [
+            'description' => 'This page was open too long and your session expired. Refresh the page and try again.',
+            'title' => '419 Page Expired',
+        ],
+        '429' => [
+            'description' => 'Too many attempts in a short time. Wait a minute and try again.',
+            'title' => '429 Too Many Requests',
+        ],
         '401' => [
             'description' => 'Oops! Looks like you\'re not allowed to access this page. It seems you\'re missing the necessary credentials.',
             'title' => '401 Unauthorized',

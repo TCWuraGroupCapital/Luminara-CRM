@@ -2542,6 +2542,18 @@ return [
             'description' => 'Ops! A página que você procura saiu de férias. Parece que não encontramos o que você estava buscando.',
             'title' => '404 Page Not Found',
         ],
+        '400' => [
+            'description' => 'Não foi possível processar a solicitação. Volte e tente novamente.',
+            'title' => '400 Solicitação inválida',
+        ],
+        '419' => [
+            'description' => 'A página ficou aberta por muito tempo e sua sessão expirou. Atualize a página e tente novamente.',
+            'title' => '419 Página expirada',
+        ],
+        '429' => [
+            'description' => 'Muitas tentativas em pouco tempo. Aguarde um minuto e tente novamente.',
+            'title' => '429 Muitas solicitações',
+        ],
         '401' => [
             'description' => 'Ops! Parece que você não tem permissão para acessar esta página. Parece que estão faltando as credenciais necessárias.',
             'title' => '401 Não autorizado.',

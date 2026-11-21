@@ -128,8 +128,10 @@ class PersonEraser
     }
 
     /**
-     * Activities that belong only to this person are deleted. One that is also part of a deal's
-     * history stays, with its wording removed and the person unlinked.
+     * Activities that belong only to this person are deleted, and so are email activities (copies
+     * of emails that are being deleted anyway; the timeline also expects their sender and
+     * recipients to be present). Any other activity that is also part of a deal's history stays,
+     * with its wording removed and the person unlinked.
      *
      * @return array{0: int, 1: int}
      */
@@ -137,7 +139,15 @@ class PersonEraser
     {
         $ids = $this->exporter->activityIds($personId);
 
-        $shared = DB::table('lead_activities')->whereIn('activity_id', $ids)->pluck('activity_id')->map(static fn ($id): int => (int) $id)->unique()->all();
+        $emailActivities = DB::table('activities')->whereIn('id', $ids)->where('type', 'email')->pluck('id')->map(static fn ($id): int => (int) $id)->all();
+
+        $shared = DB::table('lead_activities')
+            ->whereIn('activity_id', array_diff($ids, $emailActivities))
+            ->pluck('activity_id')
+            ->map(static fn ($id): int => (int) $id)
+            ->unique()
+            ->all();
+
         $own = array_values(array_diff($ids, $shared));
 
         DB::table('person_activities')->where('person_id', $personId)->delete();

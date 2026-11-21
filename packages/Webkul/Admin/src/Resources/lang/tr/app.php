@@ -2542,6 +2542,18 @@ return [
             'description' => 'Oops! Aradığınız sayfa tatilde. Aradığınız şeyi bulamadık gibi görünüyor.',
             'title' => '404 Sayfa Bulunamadı',
         ],
+        '400' => [
+            'description' => 'İstek işlenemedi. Geri dönüp tekrar deneyin.',
+            'title' => '400 Hatalı İstek',
+        ],
+        '419' => [
+            'description' => 'Sayfa çok uzun süre açık kaldı ve oturumunuz sona erdi. Sayfayı yenileyip tekrar deneyin.',
+            'title' => '419 Sayfanın Süresi Doldu',
+        ],
+        '429' => [
+            'description' => 'Kısa sürede çok fazla deneme yapıldı. Bir dakika bekleyip tekrar deneyin.',
+            'title' => '429 Çok Fazla İstek',
+        ],
         '401' => [
             'description' => 'Oops! Bu sayfaya erişim izniniz yok gibi görünüyor. Gerekli yetkilere sahip değilsiniz.',
             'title' => '401 Yetkisiz',
