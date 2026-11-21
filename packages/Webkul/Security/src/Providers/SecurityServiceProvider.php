@@ -14,6 +14,7 @@ use Webkul\Security\Console\Commands\BackupCommand;
 use Webkul\Security\Console\Commands\BackupRestoreCommand;
 use Webkul\Security\Console\Commands\BackupVerifyCommand;
 use Webkul\Security\Console\Commands\ProvisionCommand;
+use Webkul\Security\Http\Middleware\ContentSecurityPolicy;
 use Webkul\Security\Http\Middleware\EnforceAdminMfa;
 use Webkul\Security\Listeners\DeepHealthCheckListener;
 use Webkul\Security\Listeners\SecurityEventSubscriber;
@@ -32,6 +33,7 @@ class SecurityServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../Routes/admin.php');
 
         $router->pushMiddlewareToGroup('web', EnforceAdminMfa::class);
+        $router->pushMiddlewareToGroup('web', ContentSecurityPolicy::class);
         $router->pushMiddlewareToGroup('api', EnforceAdminMfa::class);
 
         Event::subscribe(SecurityEventSubscriber::class);

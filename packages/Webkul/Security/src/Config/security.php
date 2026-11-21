@@ -25,4 +25,16 @@ return [
     'backup_path' => env('SECURITY_BACKUP_PATH', 'backups'),
 
     'backup_retention_days' => (int) env('SECURITY_BACKUP_RETENTION_DAYS', 14),
+
+    /**
+     * Content-Security-Policy for HTML pages: enforce (default), report-only (browsers only
+     * warn in the console, for checking a new page) or off.
+     */
+    'csp' => env('SECURITY_CSP', 'enforce'),
+
+    /**
+     * Extra origins (space-separated) allowed as form targets, for example a single sign-on
+     * provider whose login form the app posts to.
+     */
+    'csp_form_action_extra' => env('SECURITY_CSP_FORM_ACTION', ''),
 ];

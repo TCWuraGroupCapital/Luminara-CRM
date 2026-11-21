@@ -23,6 +23,7 @@ use Webkul\Lead\Providers\LeadServiceProvider;
 use Webkul\Ledger\Providers\LedgerServiceProvider;
 use Webkul\Legal\Providers\LegalServiceProvider;
 use Webkul\Marketing\Providers\MarketingServiceProvider;
+use Webkul\Privacy\Providers\PrivacyServiceProvider;
 use Webkul\Product\Providers\ProductServiceProvider;
 use Webkul\Quote\Providers\QuoteServiceProvider;
 use Webkul\Security\Providers\SecurityServiceProvider;
@@ -70,6 +71,7 @@ return [
     QuoteServiceProvider::class,
     SecurityServiceProvider::class,
     LedgerServiceProvider::class,
+    PrivacyServiceProvider::class,
     AgentServiceProvider::class,
     TmaServiceProvider::class,
     TagServiceProvider::class,

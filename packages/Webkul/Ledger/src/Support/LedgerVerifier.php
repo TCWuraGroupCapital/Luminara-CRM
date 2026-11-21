@@ -159,6 +159,10 @@ class LedgerVerifier
             }
         }
 
+        $attestations = $blocks->contains(static fn (DataBlock $block): bool => $block->isRedacted())
+            ? LedgerRedactor::attestations()
+            : [];
+
         foreach ($blocks as $block) {
             if ($expectedHeight !== null && $block->block_height !== $expectedHeight) {
                 $errors[] = "Block height gap detected: expected #{$expectedHeight}, found #{$block->block_height}.";
@@ -168,9 +172,13 @@ class LedgerVerifier
                 $errors[] = "Block #{$block->block_height} prev_block_hash breaks continuity.";
             }
 
-            $recomputed = self::computeBlockHash($block);
-
-            if (! hash_equals($recomputed, $block->block_hash)) {
+            if ($block->isRedacted()) {
+                // The payload was removed for a deletion request. Its hash can no longer be
+                // recomputed, so it must be named by a later signed redaction record instead.
+                if (! LedgerRedactor::isAttested($block, $attestations)) {
+                    $errors[] = "Block #{$block->block_height} ({$block->receipt_code}) is marked redacted without a signed redaction record.";
+                }
+            } elseif (! hash_equals(self::computeBlockHash($block), $block->block_hash)) {
                 $errors[] = "Block #{$block->block_height} ({$block->receipt_code}) SHA-256 hash mismatch.";
             }
 
@@ -282,7 +290,9 @@ class LedgerVerifier
         }
 
         $recomputedHash = self::computeBlockHash($block);
-        $hashValid = hash_equals($recomputedHash, $block->block_hash);
+        $hashValid = $block->isRedacted()
+            ? LedgerRedactor::isAttested($block, LedgerRedactor::attestations())
+            : hash_equals($recomputedHash, $block->block_hash);
         $signatureValid = $this->verifyBlockSignature($block);
 
         $merkleProof = [];

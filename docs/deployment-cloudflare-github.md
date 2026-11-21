@@ -119,7 +119,29 @@ docker compose -f compose.prod.yaml --env-file .env.prod run --rm --entrypoint p
 docker compose -f compose.prod.yaml --env-file .env.prod --profile cloudflare up -d --build
 ```
 
+That restarts the app, so visitors see an error page for up to a minute. Behind the Cloudflare tunnel, use the restart-free release below instead.
+
 Never run `migrate:fresh` against a production database.
+
+### Releases without downtime (`bin/release.sh`)
+
+Add `compose.prod.rolling.yaml` to every Compose command. It removes the app's `127.0.0.1:APP_PORT` mapping, so two app containers can run side by side; the tunnel reaches the app over the internal network and doesn't need the port. Don't use it if a reverse proxy on the host reaches the CRM through `APP_PORT`.
+
+```bash
+# Build the new image from a clean copy of the release commit, then:
+bash bin/release.sh
+```
+
+The script backs up and verifies the database, starts the new version next to the old one, waits until it reports healthy, stops the old one gracefully, replaces the worker and the scheduler, and migrates every workspace. A release takes about 20 seconds plus the backup.
+
+- **A failed release changes nothing.** If the new version doesn't start, the script removes it and the old one keeps serving.
+- **Settings.** Run the script after editing `.env.prod` too. Add `--skip-backup` when no new image is involved.
+- **Rollback.** The script tags the image that was serving as `<project>:rollback-previous` and prints the two commands that put it back. Database migrations are not undone.
+- **Migrations may only add.** The new version migrates the main database while the old one still serves, so a release may add tables and columns but not remove or rename them. Do that one release later.
+- **Check inside the container**, since no host port is published: `docker compose ... exec app curl -fsS http://127.0.0.1/up`.
+- The first run replaces a container that still has the host port. That run is restart-free too.
+
+This removes the downtime of a release. It doesn't protect against the host itself failing.
 
 ---
 

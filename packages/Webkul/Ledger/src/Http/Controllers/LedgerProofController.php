@@ -224,6 +224,8 @@ class LedgerProofController extends Controller
             'entity_id' => $block->entity_id,
             'label' => $label,
             'canonical_payload' => $payload,
+            'redacted_at' => $block->redacted_at?->utc()->toIso8601String(),
+            'redaction_receipt' => $block->redaction_receipt,
         ];
     }
 }

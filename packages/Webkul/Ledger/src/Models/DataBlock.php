@@ -31,6 +31,8 @@ use Webkul\User\Models\UserProxy;
  * @property string $signer_pubkey
  * @property string $signer_proof
  * @property int|null $epoch_id
+ * @property Carbon|null $redacted_at
+ * @property string|null $redaction_receipt
  * @property Carbon $created_at
  * @property-read LedgerEpoch|null $epoch
  */
@@ -67,8 +69,14 @@ class DataBlock extends Model implements DataBlockContract
         'agent_passport_id' => 'integer',
         'canonical_payload' => 'array',
         'epoch_id' => 'integer',
+        'redacted_at' => 'datetime',
         'created_at' => 'datetime',
     ];
+
+    public function isRedacted(): bool
+    {
+        return $this->redacted_at !== null;
+    }
 
     protected static function booted(): void
     {

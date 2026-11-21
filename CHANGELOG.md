@@ -4,6 +4,22 @@ This changelog consists of the bug & security fixes and new features being inclu
 
 ## **v2.2.9 (Upcoming)**
 
+* [security] Added `ContentSecurityPolicy` middleware (`SECURITY_CSP=enforce|report-only|off`) sending a default `Content-Security-Policy` on HTML pages while allowing Telegram WebApp framing/script on `/tma*` and preserving embeddable `/web-forms/forms/*/form.html`.
+
+* [feature] Added `Webkul\Privacy`: personal-data export and erasure for contacts (Australian Privacy Principle 11.2 / GDPR Art. 17), with attested ledger redaction.
+    * The person page's Privacy panel (new `contacts.persons.privacy` permission; erasing needs the person's name typed) and the CLI (`luminara:privacy:export`, `luminara:privacy:erase --confirm="<name>"`) export a contact's full record and erase personal fields, emails, attachments, standalone activities, custom attributes, customer facts, deal-title mentions and agent call payloads while keeping deals and quotes linked to `Erased person #id`.
+    * `LedgerRedactor` attests redacted `DataBlock` payloads with a signed `ledger.redaction` block (`height`, `block_hash`, `payload_sha256`) before scrubbing personal fields, so `LedgerVerifier` continues to verify the full hash chain and Merkle proofs.
+    * Strings are present in all 10 locales.
+
+* [feature] Releases without downtime: `bin/release.sh` with the new `compose.prod.rolling.yaml`.
+    * The script backs up and verifies the database, starts the new version next to the old one, waits until it reports healthy, stops the old one gracefully, replaces the worker and the scheduler and migrates every workspace. If the new version fails to start, it is removed and the old one keeps serving.
+    * The image that was serving is kept as `<project>:rollback-previous`. The same script applies changed settings.
+    * `compose.prod.rolling.yaml` removes the app's host port, so two app containers can run at once. It is for installs behind the Cloudflare tunnel; `compose.prod.yaml` alone still publishes `127.0.0.1:APP_PORT`.
+    * `compose.prod.yaml`: compiled Blade views now live inside each container (`VIEW_COMPILED_PATH`), not on the shared storage volume; the app gets 60 seconds to finish requests when it stops; its health check runs every 3 seconds while it starts.
+    * A release may only add tables and columns, because the new version migrates the main database while the old one still serves. `docs/deployment-cloudflare-github.md` has the rules.
+
+* [fixed] The queue worker and the scheduler in `compose.prod.yaml` now stop on `SIGTERM`. The Apache base image stops containers with `SIGWINCH`, which PHP ignores, so every restart killed the worker after 10 seconds, in the middle of whatever job it was running. The worker now finishes its job first (up to 100 seconds).
+
 * [enhancement] Added `docs/deployment-oracle-free-tier.md` and `bin/server-bootstrap.sh`, for moving a running production stack to a free Oracle Cloud Ampere (ARM) server in Australia with no change of address. The script prepares Ubuntu with Docker Engine, automatic security updates and swap, and opens no inbound ports, because the Cloudflare tunnel connects outwards. The guide covers the server settings, a native ARM build, copying the database and storage volumes, switching the tunnel without two live copies, checks and rollback.
 
 * [feature] Added `Webkul\Legal`: `/terms`, `/privacy`, `/legal/dpa` and `/legal/subprocessors`, behind `LUMINARA_LEGAL_PAGES` (off by default).

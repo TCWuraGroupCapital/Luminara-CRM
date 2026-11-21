@@ -106,6 +106,8 @@ Set `LUMINARA_WORKSPACES=true` and each business gets its own database: its lead
 
 Two-factor login is required for admins by default in production.
 
+Behind the Cloudflare tunnel, `bash bin/release.sh` puts a new version live without an outage: it starts the new version next to the old one and switches only when the new one is healthy.
+
 The full runbook is in [docs/deployment-cloudflare-github.md](docs/deployment-cloudflare-github.md).
 
 ## Beta status and known limits

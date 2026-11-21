@@ -104,4 +104,6 @@ Within the first hours, before many new changes: stop `cloudflared` on the serve
 
 ## Later releases on the server
 
-Copy the new `git archive`, build it as in step 3, tag the running image first (`docker tag ghcr.io/luminaradigital/luminara-crm:latest luminara-crm-prod:rollback-<version>`), then run `$P up -d --no-build --no-deps app worker scheduler` and `luminara:workspace:run "migrate --force"`.
+Copy the new `git archive`, build it as in step 3, then run `bash bin/release.sh` in `/opt/luminara/app`. It backs up, starts the new version next to the old one, switches without an outage, keeps the previous image as `luminara-prod:rollback-previous` and migrates every workspace. See "Releases without downtime" in [deployment-cloudflare-github.md](./deployment-cloudflare-github.md).
+
+From then on, add `-f compose.prod.rolling.yaml` after `-f compose.prod.yaml` in `$P`, and check the app with `$P exec app curl -fsS http://127.0.0.1/up`, because the host port is no longer published.

@@ -50,9 +50,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
         echo '    SetEnv HTTPS on'; \
         echo '    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"'; \
         echo '</If>'; \
-        echo 'Header unset Content-Security-Policy'; \
         echo 'Header always set X-Frame-Options "SAMEORIGIN" "expr=%{THE_REQUEST} !~ m#^(GET|HEAD)\\s+(/web-forms/forms/[A-Za-z0-9_-]+/form\\.html|/tma(/[A-Za-z0-9_/-]*)?)(\\?[^\\s]*)?\\s+HTTP/#"'; \
-        echo 'Header always set Content-Security-Policy "frame-ancestors '\''self'\''" "expr=%{THE_REQUEST} !~ m#^(GET|HEAD)\\s+(/web-forms/forms/[A-Za-z0-9_-]+/form\\.html|/tma(/[A-Za-z0-9_/-]*)?)(\\?[^\\s]*)?\\s+HTTP/#"'; \
         echo 'Header always set Content-Security-Policy "frame-ancestors '\''self'\'' https://web.telegram.org https://*.telegram.org" "expr=%{THE_REQUEST} =~ m#^(GET|HEAD)\\s+/tma(/[A-Za-z0-9_/-]*)?(\\?[^\\s]*)?\\s+HTTP/#"'; \
         echo '<LocationMatch "^/(admin|installer|webform)/build/assets/">'; \
         echo '    Header set Cache-Control "public, max-age=31536000, immutable"'; \

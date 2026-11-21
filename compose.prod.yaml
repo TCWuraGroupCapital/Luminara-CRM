@@ -68,6 +68,9 @@ x-app-common: &app-common
     GOURWEST_WEBHOOK_SECRET: "${GOURWEST_WEBHOOK_SECRET:-}"
     TON_ANCHOR_RELAYER_URL: "${TON_ANCHOR_RELAYER_URL:-}"
     TON_ANCHOR_CONTRACT: "${TON_ANCHOR_CONTRACT:-}"
+    # Compiled Blade views stay inside each container, not on the shared storage volume, so
+    # during a rolling release (bin/release.sh) the old version never renders the new one's views.
+    VIEW_COMPILED_PATH: /var/www/html/bootstrap/cache/views
   volumes:
     - luminara_prod_storage:/var/www/html/storage
   depends_on:
@@ -101,6 +104,9 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+      start_interval: 3s
+    # Apache stops gracefully (SIGWINCH from the base image): requests in flight get this long.
+    stop_grace_period: 60s
     deploy:
       resources:
         limits:
@@ -127,6 +133,11 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+    # The Apache base image stops containers with SIGWINCH, which PHP ignores: without SIGTERM
+    # the worker was killed mid-job. On SIGTERM queue:work finishes the job it is on (up to 90
+    # seconds) and exits.
+    stop_signal: SIGTERM
+    stop_grace_period: 100s
     deploy:
       resources:
         limits:
@@ -153,6 +164,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+    stop_signal: SIGTERM
     deploy:
       resources:
         limits:

@@ -1,0 +1,15 @@
+# Restart-free releases for compose.prod.yaml. Use both files together:
+#
+#   docker compose -p luminara-prod -f compose.prod.yaml -f compose.prod.rolling.yaml --env-file .env.prod ...
+#
+# bin/release.sh starts the new version next to the old one, and two containers cannot publish
+# the same host port, so this file removes the app's 127.0.0.1:APP_PORT mapping. Visitors are not
+# affected: the Cloudflare tunnel reaches the app over the internal `tunnel` network. For a local
+# check, run curl inside the container:
+#
+#   docker compose ... exec app curl -fsS http://127.0.0.1/up
+#
+# Do not use this file if a reverse proxy on the host reaches the CRM through APP_PORT.
+services:
+  app:
+    ports: !reset []
