@@ -2,6 +2,7 @@
 
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Testing\TestResponse;
 
 uses(DatabaseTransactions::class);
 
@@ -21,7 +22,7 @@ function storeLocaleSetting(string $value): void
     ]);
 }
 
-function postLocale(string $value): Illuminate\Testing\TestResponse
+function postLocale(string $value): TestResponse
 {
     return test()->actingAs(getDefaultAdmin(), 'user')
         ->post(route('admin.configuration.store', ['slug' => 'general', 'slug2' => 'general']), [

@@ -143,7 +143,9 @@ jobs:
           curl -fsSI http://127.0.0.1:8080/up | grep -Fi 'Referrer-Policy: strict-origin-when-cross-origin'
           curl -fsSI http://127.0.0.1:8080/up | grep -Fi 'Permissions-Policy:'
           curl -fsSI http://127.0.0.1:8080/up | grep -Fi 'X-Frame-Options: SAMEORIGIN'
-          curl -fsSI http://127.0.0.1:8080/up | grep -Fi "Content-Security-Policy: frame-ancestors 'self'"
+          # The policy is sent by the app on HTML pages (Webkul\Security ContentSecurityPolicy middleware).
+          curl -fsSI http://127.0.0.1:8080/admin/login | grep -Fi "Content-Security-Policy: default-src 'self'"
+          curl -fsSI http://127.0.0.1:8080/admin/login | grep -Fi "frame-ancestors 'self'"
           test "$(curl -fsSI -H 'X-Forwarded-Proto: https' http://127.0.0.1:8080/up | grep -ci 'Strict-Transport-Security' || true)" = "0"
           docker exec luminara-crm-ci curl -fsSI -H 'X-Forwarded-Proto: https' http://127.0.0.1/up | grep -Fi 'Strict-Transport-Security: max-age=31536000; includeSubDomains'
           curl -sI --path-as-is 'http://127.0.0.1:8080/web-forms/forms/1/../../admin/login' | grep -Fi 'X-Frame-Options: SAMEORIGIN'

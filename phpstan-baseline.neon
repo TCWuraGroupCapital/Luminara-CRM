@@ -205,24 +205,6 @@ parameters:
 			path: packages/Webkul/Admin/src/Exceptions/Handler.php
 
 		-
-			message: '#^PHPDoc tag @param references unknown parameter\: \$path$#'
-			identifier: parameter.notFound
-			count: 1
-			path: packages/Webkul/Admin/src/Exceptions/Handler.php
-
-		-
-			message: '#^Parameter \#1 \$errorCode of method Webkul\\Admin\\Exceptions\\Handler\:\:response\(\) expects string, int given\.$#'
-			identifier: argument.type
-			count: 4
-			path: packages/Webkul/Admin/src/Exceptions/Handler.php
-
-		-
-			message: '#^Parameter \#2 \$status of method Illuminate\\Contracts\\Routing\\ResponseFactory\:\:json\(\) expects int, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: packages/Webkul/Admin/src/Exceptions/Handler.php
-
-		-
 			message: '#^PHPDoc tag @return with type Carbon\\Carbon is not subtype of native type Illuminate\\Support\\Carbon\.$#'
 			identifier: return.phpDocType
 			count: 2
