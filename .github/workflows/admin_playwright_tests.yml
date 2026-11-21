@@ -86,6 +86,10 @@ jobs:
           sed -i "s|^\(APP_DEBUG=\s*\).*$|\1true|" .env
           sed -i "s|^\(APP_URL=\s*\).*$|\1http://127.0.0.1:8000|" .env
 
+          # No mail server runs here. Write mail to the log so sending succeeds; a failed send
+          # is reported to the person and keeps the email in the outbox.
+          sed -i "s|^\(MAIL_MAILER=\s*\).*$|\1log|" .env
+
           # The debug bar renders its own controls into every page, and its folder
           # switcher is a second combobox that makes the forms' own selects ambiguous.
           echo "DEBUGBAR_ENABLED=false" >> .env

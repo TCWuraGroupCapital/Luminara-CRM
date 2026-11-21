@@ -13,6 +13,7 @@ This changelog consists of the bug & security fixes and new features being inclu
     * A composed email that fails to send now stays in the outbox with the reason shown. Before, the failure was hidden and the screen said it was sent.
     * Each business reads replies from its own IMAP mailbox (Settings > Configuration > Email > IMAP): `inbound-emails:process` now runs for every workspace every five minutes, and only reads a mailbox the business saved itself, never the server's `IMAP_*` values.
     * [security] The IMAP settings screen no longer pre-fills the username and password from `IMAP_USERNAME` / `IMAP_PASSWORD`. The screen prints its values into the page, so every hosted business could read the server's mailbox login.
+    * The browser tests' workflow writes mail to the log (`MAIL_MAILER=log`), since a failed send is no longer reported as sent.
     * Strings are present in all 10 locales.
 
 * [feature] Off-site backups and a restore drill.
