@@ -144,6 +144,49 @@
                                 @enderror
                             </div>
                         @endif
+
+                        @if (\Webkul\Legal\Support\LegalDocuments::requiresAcceptance())
+                            <div>
+                                <label class="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-300">
+                                    <input
+                                        class="mt-0.5"
+                                        id="accept_terms"
+                                        name="accept_terms"
+                                        type="checkbox"
+                                        value="1"
+                                        required
+                                        @checked(old('accept_terms'))
+                                        @error('accept_terms') aria-invalid="true" aria-describedby="accept_terms-error" @enderror
+                                    >
+
+                                    <span>@lang('workspace::app.signup.accept')</span>
+                                </label>
+
+                                <p class="mt-1 flex flex-wrap gap-x-3 ps-5 text-xs">
+                                    @foreach (['terms', 'privacy'] as $document)
+                                        @if (\Webkul\Legal\Support\LegalDocuments::exists($document))
+                                            <a
+                                                class="font-semibold text-brandColor underline dark:text-teal-400"
+                                                href="{{ route('legal.'.$document) }}"
+                                                target="_blank"
+                                                rel="noopener"
+                                            >
+                                                @lang('legal::app.titles.'.$document)
+                                            </a>
+                                        @endif
+                                    @endforeach
+                                </p>
+
+                                @error('accept_terms')
+                                    <p
+                                        class="mt-1 text-xs text-red-600"
+                                        id="accept_terms-error"
+                                    >
+                                        {{ $message }}
+                                    </p>
+                                @enderror
+                            </div>
+                        @endif
                     </div>
 
                     <div class="flex flex-wrap items-center justify-between gap-3 p-4">

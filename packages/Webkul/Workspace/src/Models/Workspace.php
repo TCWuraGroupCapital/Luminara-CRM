@@ -22,6 +22,8 @@ use Webkul\Workspace\WorkspaceManager;
  * @property string|null $owner_password
  * @property string $status_token
  * @property string|null $verification_token
+ * @property string|null $terms_version
+ * @property Carbon|null $terms_accepted_at
  * @property Carbon|null $created_at
  * @property string|null $error
  */
@@ -59,7 +61,13 @@ class Workspace extends Model
         'owner_password',
         'status_token',
         'verification_token',
+        'terms_version',
+        'terms_accepted_at',
         'error',
+    ];
+
+    protected $casts = [
+        'terms_accepted_at' => 'datetime',
     ];
 
     protected $hidden = [

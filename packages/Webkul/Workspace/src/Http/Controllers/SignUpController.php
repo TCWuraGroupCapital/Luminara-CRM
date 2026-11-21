@@ -13,6 +13,7 @@ use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Throwable;
+use Webkul\Legal\Support\LegalDocuments;
 use Webkul\Workspace\Jobs\ProvisionWorkspace;
 use Webkul\Workspace\Mail\VerifySignUp;
 use Webkul\Workspace\Models\Workspace;
@@ -48,6 +49,9 @@ class SignUpController extends Controller
             'email' => 'required|email:rfc|max:190',
             'password' => ['required', 'confirmed', Password::min(12)->letters()->mixedCase()->numbers()],
             'invite_code' => 'nullable|string|max:120',
+            'accept_terms' => LegalDocuments::requiresAcceptance() ? 'accepted' : 'nullable',
+        ], [
+            'accept_terms.accepted' => trans('workspace::app.validation.accept-terms'),
         ]);
 
         if (config('workspaces.signup') === 'invite') {
@@ -70,6 +74,8 @@ class SignUpController extends Controller
         if (! $this->manager->verifiesEmail()) {
             $workspace = $this->provisioner->register($data['business_name'], $data['name'], $data['email'], $data['password']);
 
+            $this->recordAcceptance($workspace);
+
             ProvisionWorkspace::dispatch($workspace->id);
 
             return redirect()->route('workspace.signup.status', $workspace->status_token);
@@ -82,6 +88,8 @@ class SignUpController extends Controller
         $token = Str::random(48);
 
         $workspace = $this->provisioner->register($data['business_name'], $data['name'], $data['email'], $data['password'], $token);
+
+        $this->recordAcceptance($workspace);
 
         try {
             Mail::to($workspace->owner_email)->send(new VerifySignUp($workspace, $token));
@@ -136,6 +144,22 @@ class SignUpController extends Controller
         }
 
         return view('workspace::status', ['workspace' => $workspace]);
+    }
+
+    /**
+     * Which Terms and Privacy Policy the owner accepted (label plus a hash of the exact
+     * wording), and when. Nothing is recorded while the legal pages are off.
+     */
+    private function recordAcceptance(Workspace $workspace): void
+    {
+        if (! LegalDocuments::requiresAcceptance()) {
+            return;
+        }
+
+        $workspace->update([
+            'terms_version' => LegalDocuments::acceptanceVersion(),
+            'terms_accepted_at' => now(),
+        ]);
     }
 
     private function ensureSignUpIsOpen(): void

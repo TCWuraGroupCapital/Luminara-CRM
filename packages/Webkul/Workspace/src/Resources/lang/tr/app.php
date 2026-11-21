@@ -14,6 +14,7 @@ return [
         'submit' => 'Çalışma alanı oluştur',
         'have-account' => 'Zaten hesabınız var mı? Giriş yapın',
         'link' => 'Yeni misiniz? Çalışma alanı oluşturun',
+        'accept' => 'Hizmet Şartları\'nı ve Gizlilik Politikası\'nı okudum ve işletmem adına kabul ediyorum.',
     ],
     'status' => [
         'title' => 'Çalışma alanınız hazırlanıyor',
@@ -33,6 +34,7 @@ return [
         'invite-code' => 'Bu davet kodu geçerli değil.',
         'limit' => 'Şu anda yeni çalışma alanı kabul etmiyoruz. Lütfen daha sonra yeniden deneyin.',
         'mail-failed' => 'Bu adrese onay e-postası gönderemedik. Adresi kontrol edip yeniden deneyin.',
+        'accept-terms' => 'Devam etmek için Hizmet Şartları\'nı ve Gizlilik Politikası\'nı kabul edin.',
     ],
     'mail' => [
         'subject' => 'Çalışma alanınızı oluşturmak için e-postanızı onaylayın',

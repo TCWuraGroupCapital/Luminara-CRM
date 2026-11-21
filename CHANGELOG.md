@@ -4,6 +4,15 @@ This changelog consists of the bug & security fixes and new features being inclu
 
 ## **v2.2.9 (Upcoming)**
 
+* [enhancement] Added `docs/deployment-oracle-free-tier.md` and `bin/server-bootstrap.sh`, for moving a running production stack to a free Oracle Cloud Ampere (ARM) server in Australia with no change of address. The script prepares Ubuntu with Docker Engine, automatic security updates and swap, and opens no inbound ports, because the Cloudflare tunnel connects outwards. The guide covers the server settings, a native ARM build, copying the database and storage volumes, switching the tunnel without two live copies, checks and rollback.
+
+* [feature] Added `Webkul\Legal`: `/terms`, `/privacy`, `/legal/dpa` and `/legal/subprocessors`, behind `LUMINARA_LEGAL_PAGES` (off by default).
+    * Pages render the operator's own Markdown from `storage/app/legal` (`terms.md`, `privacy.md`, `dpa.md`, `subprocessors.md`). No legal text ships with the code, and a missing file answers 404.
+    * Raw HTML in a text is escaped and unsafe links are dropped.
+    * The sign-in page links to the pages that exist.
+    * While on and `terms.md` exists, workspace sign-up requires a ticked acceptance. The landlord `workspaces` table records `terms_version` (the `LUMINARA_LEGAL_VERSION` label plus a hash of the Terms and Privacy Policy as accepted) and `terms_accepted_at`.
+    * Strings are present in all 10 locales.
+
 * [release] **1.0.0-beta.3** ships per-business email (below): each business sends through its own SMTP account and reads replies from its own mailbox, and a hosted business can no longer send through the operator's mailbox.
 
 * [feature] Each business sends its own email. Settings > Configuration > Email > Outgoing mail takes the business's SMTP account (server, port, username, encrypted password, sender name and address), with a "Send test email" button that mails the signed-in person.

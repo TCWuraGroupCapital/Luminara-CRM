@@ -14,6 +14,7 @@ return [
         'submit' => 'Criar espaço de trabalho',
         'have-account' => 'Já tem uma conta? Entrar',
         'link' => 'Novo por aqui? Crie um espaço de trabalho',
+        'accept' => 'Li e aceito os Termos de Serviço e a Política de Privacidade em nome da minha empresa.',
     ],
     'status' => [
         'title' => 'Preparando seu espaço de trabalho',
@@ -33,6 +34,7 @@ return [
         'invite-code' => 'Esse código de convite não é válido.',
         'limit' => 'No momento não estamos aceitando novos espaços de trabalho. Tente mais tarde.',
         'mail-failed' => 'Não foi possível enviar um e-mail de confirmação para este endereço. Verifique-o e tente novamente.',
+        'accept-terms' => 'Aceite os Termos de Serviço e a Política de Privacidade para continuar.',
     ],
     'mail' => [
         'subject' => 'Confirme seu e-mail para criar seu espaço de trabalho',

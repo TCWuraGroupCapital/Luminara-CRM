@@ -14,6 +14,7 @@ return [
         'submit' => 'Tạo không gian làm việc',
         'have-account' => 'Đã có tài khoản? Đăng nhập',
         'link' => 'Bạn mới đến? Tạo không gian làm việc',
+        'accept' => 'Tôi đã đọc và chấp nhận Điều khoản dịch vụ và Chính sách quyền riêng tư thay mặt cho doanh nghiệp của mình.',
     ],
     'status' => [
         'title' => 'Đang thiết lập không gian làm việc',
@@ -33,6 +34,7 @@ return [
         'invite-code' => 'Mã mời không hợp lệ.',
         'limit' => 'Hiện chúng tôi chưa nhận thêm không gian làm việc mới. Vui lòng thử lại sau.',
         'mail-failed' => 'Chúng tôi không thể gửi email xác nhận tới địa chỉ này. Hãy kiểm tra và thử lại.',
+        'accept-terms' => 'Vui lòng chấp nhận Điều khoản dịch vụ và Chính sách quyền riêng tư để tiếp tục.',
     ],
     'mail' => [
         'subject' => 'Xác nhận email để tạo không gian làm việc của bạn',

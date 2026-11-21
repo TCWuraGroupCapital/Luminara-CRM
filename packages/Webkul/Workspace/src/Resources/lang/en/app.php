@@ -14,6 +14,7 @@ return [
         'submit' => 'Create workspace',
         'have-account' => 'Already have an account? Sign in',
         'link' => 'New here? Create a workspace',
+        'accept' => 'I have read and accept the Terms of Service and Privacy Policy on behalf of my business.',
     ],
     'status' => [
         'title' => 'Setting up your workspace',
@@ -33,6 +34,7 @@ return [
         'invite-code' => 'That invite code is not valid.',
         'limit' => 'We are not taking new workspaces right now. Please try again later.',
         'mail-failed' => 'We could not send a confirmation email to this address. Check it and try again.',
+        'accept-terms' => 'Please accept the Terms of Service and Privacy Policy to continue.',
     ],
     'mail' => [
         'subject' => 'Confirm your email to create your workspace',

@@ -185,6 +185,18 @@ Limits to know: the Telegram bot and mini app only serve the main workspace, and
   docker compose -f compose.prod.yaml --env-file .env.prod exec app php artisan luminara:ledger-verify --json
   docker compose -f compose.prod.yaml --env-file .env.prod exec app php artisan luminara:passport admin@yourdomain.com claude-code --json
   ```
+### 4.0 Legal pages (`Webkul\Legal`)
+
+Publish your reviewed texts as Markdown in the storage volume, then switch the pages on:
+
+```bash
+docker cp terms.md luminara-prod-app-1:/var/www/html/storage/app/legal/terms.md   # also privacy.md, dpa.md, subprocessors.md
+docker exec luminara-prod-app-1 chown -R www-data:www-data /var/www/html/storage/app/legal
+# .env.prod: LUMINARA_LEGAL_PAGES=true and LUMINARA_LEGAL_VERSION=2026-12-01, then recreate app, worker and scheduler
+```
+
+When you change a text, raise `LUMINARA_LEGAL_VERSION`. Every sign-up stores that label plus a hash of the exact Terms and Privacy Policy accepted (`workspaces.terms_version`).
+
 ### 4.1 Off-site copies (`backup-sync`)
 
 Backups on the same disk as the database don't protect against losing that disk. The optional `backup-sync` service (profile `offsite`) copies `storage/app` to any S3-compatible bucket every hour. That folder holds the database backups of every workspace plus uploaded files.

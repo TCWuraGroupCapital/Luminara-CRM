@@ -321,6 +321,58 @@ it('asks for the invite code when sign-up is by invitation', function () {
     Workspace::query()->where('owner_email', 'owner@charlie.isolation.test')->delete();
 });
 
+it('requires and records acceptance of the terms when the legal pages are on', function () {
+    $legalDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'legal-signup-'.bin2hex(random_bytes(4));
+    mkdir($legalDir);
+    file_put_contents($legalDir.'/terms.md', "# Terms\n\nText.");
+    file_put_contents($legalDir.'/privacy.md', "# Privacy\n\nText.");
+
+    config([
+        'workspaces.signup' => 'invite',
+        'workspaces.invite_code' => 'beta-2026',
+        'legal.enabled' => true,
+        'legal.path' => $legalDir,
+        'legal.version' => '2026-12-01',
+    ]);
+
+    businesses();
+
+    Bus::fake([ProvisionWorkspace::class]);
+
+    $form = [
+        'business_name' => 'Delta Diner',
+        'name' => 'Delta Owner',
+        'email' => 'owner@delta.isolation.test',
+        'password' => WS_PASSWORD,
+        'password_confirmation' => WS_PASSWORD,
+        'invite_code' => 'beta-2026',
+    ];
+
+    try {
+        $this->get(route('workspace.signup.create'))->assertOk()->assertSee('name="accept_terms"', false);
+
+        $this->post(route('workspace.signup.store'), $form)->assertSessionHasErrors('accept_terms');
+
+        workspaceManager()->switchToLandlord();
+
+        expect(Workspace::query()->where('owner_email', 'owner@delta.isolation.test')->exists())->toBeFalse();
+
+        $this->post(route('workspace.signup.store'), $form + ['accept_terms' => '1'])->assertSessionHasNoErrors();
+
+        workspaceManager()->switchToLandlord();
+
+        $workspace = Workspace::query()->where('owner_email', 'owner@delta.isolation.test')->firstOrFail();
+
+        expect($workspace->terms_version)->toStartWith('2026-12-01#')
+            ->and($workspace->terms_accepted_at)->not->toBeNull();
+
+        $workspace->delete();
+    } finally {
+        array_map('unlink', glob($legalDir.DIRECTORY_SEPARATOR.'*') ?: []);
+        @rmdir($legalDir);
+    }
+});
+
 it('runs a queued job in the workspace it was dispatched from', function () {
     [$acme] = businesses();
 

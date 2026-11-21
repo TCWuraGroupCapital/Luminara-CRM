@@ -21,6 +21,7 @@ use Webkul\Gourwest\Providers\GourwestServiceProvider;
 use Webkul\Installer\Providers\InstallerServiceProvider;
 use Webkul\Lead\Providers\LeadServiceProvider;
 use Webkul\Ledger\Providers\LedgerServiceProvider;
+use Webkul\Legal\Providers\LegalServiceProvider;
 use Webkul\Marketing\Providers\MarketingServiceProvider;
 use Webkul\Product\Providers\ProductServiceProvider;
 use Webkul\Quote\Providers\QuoteServiceProvider;
@@ -64,6 +65,7 @@ return [
     MarketingServiceProvider::class,
     InstallerServiceProvider::class,
     LeadServiceProvider::class,
+    LegalServiceProvider::class,
     ProductServiceProvider::class,
     QuoteServiceProvider::class,
     SecurityServiceProvider::class,
