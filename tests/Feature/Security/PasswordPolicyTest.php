@@ -22,7 +22,7 @@ use Webkul\User\Models\User;
  */
 uses(DatabaseTransactions::class);
 
-const POLICY_PASSWORD = 'LuminaraStaff4821';
+const POLICY_PASSWORD = 'Luminara11111';
 
 beforeEach(function () {
     Mail::fake();

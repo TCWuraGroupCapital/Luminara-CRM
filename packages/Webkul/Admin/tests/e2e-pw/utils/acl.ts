@@ -23,7 +23,7 @@ export const ADMIN_PASSWORD = "admin123";
  * Password handed to every user these suites create.
  * 12 or more characters, with upper and lower case letters and a number.
  */
-export const TEST_PASSWORD = "LuminaraStaff4821";
+export const TEST_PASSWORD = "Luminara11111";
 
 export type ViewPermission = "global" | "group" | "individual";
 
