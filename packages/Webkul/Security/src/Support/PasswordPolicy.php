@@ -33,15 +33,4 @@ class PasswordPolicy
 
         return $rule;
     }
-
-    /**
-     * @return array<int, mixed>
-     */
-    public static function rules(bool $required = true): array
-    {
-        return [
-            $required ? 'required' : 'nullable',
-            Password::defaults(),
-        ];
-    }
 }

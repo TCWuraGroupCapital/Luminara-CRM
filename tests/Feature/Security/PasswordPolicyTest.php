@@ -90,11 +90,12 @@ it('registers a 12 character mixed password rule and skips the breach check whil
 it('rejects passwords that miss length, mixed case, or a number', function (string $password) {
     $check = Validator::make(
         ['password' => $password],
-        ['password' => PasswordPolicy::rules()]
+        ['password' => ['required', 'string', PasswordRule::defaults()]]
     );
 
     expect($check->fails())->toBeTrue()
-        ->and($check->errors()->has('password'))->toBeTrue();
+        ->and($check->errors()->has('password'))->toBeTrue()
+        ->and($check->errors()->first('password'))->not->toStartWith('validation.');
 })->with([
     'too short' => 'Short1A',
     'no uppercase' => 'alllowercase1234',
@@ -106,7 +107,7 @@ it('rejects passwords that miss length, mixed case, or a number', function (stri
 it('accepts a password that meets the policy', function () {
     $check = Validator::make(
         ['password' => POLICY_PASSWORD],
-        ['password' => PasswordPolicy::rules()]
+        ['password' => ['required', 'string', PasswordRule::defaults()]]
     );
 
     expect($check->fails())->toBeFalse();
@@ -275,6 +276,18 @@ it('rejects weak passwords in luminara:provision before any migration', function
     'no number' => 'NoDigitsInThisPassword',
     'known default' => 'admin123',
 ]);
+
+it('still signs in a user whose saved password would fail the new rule', function () {
+    $account = policyAccount('secret1');
+
+    $this->post(route('admin.session.store'), [
+        'email' => $account->email,
+        'password' => 'secret1',
+    ])->assertRedirect()
+        ->assertSessionMissing('error');
+
+    expect(auth()->guard('user')->id())->toBe($account->id);
+});
 
 it('requires a strong password on the user form request', function () {
     $create = UserForm::create('/admin/settings/users/create', 'POST', [
