@@ -4,7 +4,6 @@ cdfa51d1193a58dab33951ec77800dcecacef189:docs/agents.md:curl-auth-header:63
 # A fixed test password in the workspace isolation test, since generated at run time.
 46e9662c376415d2e2fba0aa1c229d47abc7232a:tests/Feature/Workspace/WorkspaceIsolationTest.php:generic-api-key:26
 394e2ab6c684089e730616d73ef1f08d66f3547d:tests/Feature/Workspace/WorkspaceIsolationTest.php:generic-api-key:26
-# Test password committed on the strong-password branch, then replaced.
-# The scan reads every branch, so that older commit still matches.
+# Strong-password branch history still has this test password. The scan reads every branch.
 14d17086a994d02764cf37b35df1d706e44036b6:packages/Webkul/Admin/tests/e2e-pw/utils/acl.ts:generic-api-key:26
 14d17086a994d02764cf37b35df1d706e44036b6:tests/Feature/Security/PasswordPolicyTest.php:generic-api-key:25

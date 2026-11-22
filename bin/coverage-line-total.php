@@ -24,15 +24,25 @@ if (! is_file($path)) {
     exit(2);
 }
 
+libxml_use_internal_errors(true);
 $xml = simplexml_load_file($path);
+libxml_clear_errors();
 
-if ($xml === false || ! isset($xml->project->metrics)) {
+if ($xml === false) {
+    fwrite(STDERR, "Clover XML at {$path} could not be read.\n");
+    exit(2);
+}
+
+// Project total only. File and class metrics sit under <package> and must not win.
+$nodes = $xml->xpath('/coverage/project/metrics');
+
+if ($nodes === false || $nodes === []) {
     fwrite(STDERR, "Clover XML at {$path} has no project metrics.\n");
     exit(2);
 }
 
-$statements = (int) $xml->project->metrics['statements'];
-$covered = (int) $xml->project->metrics['coveredstatements'];
+$statements = (int) $nodes[0]['statements'];
+$covered = (int) $nodes[0]['coveredstatements'];
 
 if ($statements < 1) {
     fwrite(STDERR, "Clover XML at {$path} reports no executable lines.\n");
