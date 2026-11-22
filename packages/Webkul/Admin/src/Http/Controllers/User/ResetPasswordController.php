@@ -11,6 +11,8 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password as PasswordRule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Webkul\Admin\Http\Controllers\Controller;
 
@@ -45,7 +47,7 @@ class ResetPasswordController extends Controller
             $this->validate(request(), [
                 'token' => 'required',
                 'email' => 'required|email',
-                'password' => 'required|confirmed|min:6',
+                'password' => ['required', 'string', 'confirmed', PasswordRule::defaults()],
             ]);
 
             $response = $this->broker()->reset(
@@ -63,6 +65,8 @@ class ResetPasswordController extends Controller
                 ->withErrors([
                     'email' => trans($response),
                 ]);
+        } catch (ValidationException $exception) {
+            throw $exception;
         } catch (\Exception $exception) {
             session()->flash('error', trans($exception->getMessage()));
 

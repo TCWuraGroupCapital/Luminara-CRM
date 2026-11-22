@@ -6,6 +6,8 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 use Webkul\Core\Models\CoreConfig;
 use Webkul\Installer\Database\Seeders\DatabaseSeeder as KrayinDatabaseSeeder;
 use Webkul\Installer\Helpers\DatabaseManager;
@@ -18,7 +20,7 @@ class ProvisionCommand extends Command
 {
     protected $signature = 'luminara:provision
                             {--admin-email= : Initial or rotated administrator email}
-                            {--admin-password= : Initial or rotated administrator password (>= 12 chars)}
+                            {--admin-password= : Initial or rotated administrator password (12+ characters, mixed case, and a number)}
                             {--admin-name=Luminara Admin : Administrator display name}
                             {--force : Run non-interactively in production}';
 
@@ -42,7 +44,7 @@ class ProvisionCommand extends Command
         $name = trim((string) $this->option('admin-name')) ?: 'Luminara Admin';
 
         if ($password === '' && $this->input->isInteractive() && ! $this->option('no-interaction')) {
-            $password = (string) ($this->secret('Enter administrator password (minimum 12 characters)') ?? '');
+            $password = (string) ($this->secret('Enter administrator password (12+ characters, mixed case, and a number)') ?? '');
         }
 
         if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL) || strtolower($email) === 'admin@example.com') {
@@ -51,8 +53,19 @@ class ProvisionCommand extends Command
             return self::FAILURE;
         }
 
-        if (strlen($password) < 12 || in_array(strtolower($password), self::FORBIDDEN_PASSWORDS, true)) {
-            $this->error('Administrator password (--admin-password or LUMINARA_ADMIN_PASSWORD) must be at least 12 characters and not a known default.');
+        $passwordCheck = Validator::make(
+            ['password' => $password],
+            ['password' => ['required', 'string', Password::defaults()]]
+        );
+
+        if ($passwordCheck->fails()) {
+            $this->error((string) $passwordCheck->errors()->first('password'));
+
+            return self::FAILURE;
+        }
+
+        if (in_array(strtolower($password), self::FORBIDDEN_PASSWORDS, true)) {
+            $this->error('Administrator password (--admin-password or LUMINARA_ADMIN_PASSWORD) must not be a known default.');
 
             return self::FAILURE;
         }

@@ -303,7 +303,7 @@
                                         type="password"
                                         id="password"
                                         name="password"
-                                        ::rules="user.id ? '' : 'required|min:6'"
+                                        ::rules="user.id ? 'min:12' : 'required|min:12'"
                                         :label="trans('admin::app.settings.users.index.create.password')"
                                         :placeholder="trans('admin::app.settings.users.index.create.password')"
                                         ref="password"

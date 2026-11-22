@@ -159,7 +159,7 @@
                             <x-admin::form.control-group.control
                                 type="password"
                                 name="password"
-                                rules="min:6"
+                                rules="min:12"
                                 :placeholder="trans('admin::app.account.edit.password')"
                                 ref="password"
                             />
