@@ -19,8 +19,8 @@ jobs:
     name: PHP 8.3 Pest coverage (pcov)
     timeout-minutes: 60
 
-    # Measured 61.85% (17507/28304 lines) with pcov. The floor is that
-    # number rounded down. Raise it when coverage is meant to move up.
+    # Measured 61.85% (17504/28301 lines) with pcov on CI. The floor is
+    # that number rounded down. Raise it when coverage is meant to move up.
     env:
       COVERAGE_MIN: "61"
 
