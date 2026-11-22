@@ -349,13 +349,16 @@ class ReadinessProbe
         if (! is_file($path)) {
             @file_put_contents($path, (string) $now);
 
-            return true;
+            return $grace > 0;
         }
 
         $started = (int) @file_get_contents($path);
 
+        // A blank or corrupt file must not keep the queue check in grace forever.
         if ($started <= 0) {
-            return true;
+            @file_put_contents($path, (string) $now);
+
+            return $grace > 0;
         }
 
         return ($now - $started) < $grace;

@@ -204,6 +204,33 @@ it('reports a missing heartbeat as starting during the boot grace', function () 
         ->assertJsonPath('checks.queue.heartbeat_at', null);
 });
 
+it('repairs a corrupt queue grace file instead of staying in grace forever', function () {
+    $path = (string) config('security.health_boot_path');
+    file_put_contents($path, '0');
+
+    $check = app(ReadinessProbe::class)->checkQueue();
+
+    expect($check['status'])->toBe('starting')
+        ->and((int) file_get_contents($path))->toBeGreaterThan(time() - 5);
+
+    file_put_contents($path, (string) (time() - 10000));
+    config(['security.health_queue_start_grace_seconds' => 0]);
+
+    expect(app(ReadinessProbe::class)->checkQueue()['status'])->toBe('fail')
+        ->and(app(ReadinessProbe::class)->checkQueue()['error'])->toBe('missing');
+});
+
+it('fails a missing heartbeat immediately when the start grace is zero', function () {
+    $path = (string) config('security.health_boot_path');
+    @unlink($path);
+    config(['security.health_queue_start_grace_seconds' => 0]);
+
+    $check = app(ReadinessProbe::class)->checkQueue();
+
+    expect($check['status'])->toBe('fail')
+        ->and($check['error'])->toBe('missing');
+});
+
 it('returns 503 when the queue heartbeat is stale after the start grace', function () {
     config(['security.health_queue_start_grace_seconds' => 0]);
     Cache::forever(QueueHeartbeat::CACHE_KEY, gmdate('Y-m-d\TH:i:s\Z', time() - 1000));

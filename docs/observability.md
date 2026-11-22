@@ -91,7 +91,7 @@ The Slack URL must be `https`. The message does not include the webhook URL or j
 
 `compose.prod.yaml`:
 
-- **app** health check: `GET /health/ready` (readiness). The image `HEALTHCHECK` stays `GET /up` (liveness) for a container started without this compose file.
+- **app** health check: `GET /health/ready`. The image `HEALTHCHECK` uses that same URL, so a container started without this compose file still fails when a critical dependency is down. `/up` stays available as a process-only liveness URL.
 - **scheduler** health check: the process is `schedule:work`, and `luminara:queue-heartbeat --check` says the heartbeat is fresh or still inside the start grace.
 - **worker** health check: the process is `queue:work`. It does not call the app, so a database blip does not get reported as a dead worker.
 - **db**, **redis**, and **backup-sync** keep their own checks.

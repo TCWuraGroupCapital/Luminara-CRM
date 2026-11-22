@@ -111,8 +111,8 @@ services:
       - egress
       - tunnel
     healthcheck:
-      # Readiness: database, Redis, queue heartbeat, backup age, ledger seal age.
-      # /up remains liveness (the image HEALTHCHECK). curl fails the probe on 503.
+      # Same readiness probe as the image HEALTHCHECK. curl fails the probe on 503.
+      # /up stays available for a process-only liveness check.
       test: ["CMD-SHELL", "curl -fsS --max-time 4 http://127.0.0.1/health/ready >/dev/null || exit 1"]
       interval: 20s
       timeout: 5s

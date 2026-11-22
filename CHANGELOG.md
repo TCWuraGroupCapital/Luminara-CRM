@@ -11,7 +11,7 @@ This changelog consists of the bug & security fixes and new features being inclu
     * `LOG_CHANNEL=json` writes one JSON object per line and redacts secret fields. Production compose selects that channel by default.
     * The Sentry Laravel SDK stays inactive unless `SENTRY_LARAVEL_DSN` is set.
     * `luminara:ops-alert` runs every five minutes. It logs at critical, and can email or post to a Slack webhook, when failed jobs increase or backups are too old.
-    * The app health check in `compose.prod.yaml` calls `/health/ready`. The scheduler health check also requires the queue heartbeat. See `docs/observability.md`.
+    * The production image and `compose.prod.yaml` both call `/health/ready`. The scheduler health check also requires the queue heartbeat. `/up` stays available as a process-only liveness URL. See `docs/observability.md`.
 
 * [fixed] The production image sent two `Content-Security-Policy` headers on `/tma`: the mini app's own, and Apache's identical copy, which was no longer stripped once the app started sending its policy. Apache now leaves CSP entirely to the app. The Docker smoke test now checks the app's policy on the sign-in page instead of the old Apache-only header on `/up`. Three stale PHPStan baseline entries for the error handler were removed, and a Pint style issue in a test was fixed.
 

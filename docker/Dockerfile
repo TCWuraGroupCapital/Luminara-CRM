@@ -81,8 +81,8 @@ RUN sed -i 's/\r$//' /usr/local/bin/luminara-entrypoint \
     && mkdir -p storage/app/public storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
 ENV APACHE_RUN_USER=www-data APACHE_RUN_GROUP=www-data
 EXPOSE 80
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD curl -fsS http://127.0.0.1/up >/dev/null || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -fsS --max-time 4 http://127.0.0.1/health/ready >/dev/null || exit 1
 
 FROM base AS dev
 RUN composer install --no-interaction --no-scripts --prefer-dist \
