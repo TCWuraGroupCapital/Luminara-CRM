@@ -6,6 +6,8 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 use Webkul\Core\Providers\CoreServiceProvider;
 use Webkul\Installer\Database\Seeders\DatabaseSeeder as KrayinDatabaseSeeder;
 use Webkul\Installer\Events\ComposerEvents;
@@ -357,9 +359,15 @@ class Installer extends Command
         $adminPassword = password(
             label: 'Configure the password for the admin user',
             required: true,
-            validate: fn (string $value) => match (true) {
-                strlen($value) < 8 => 'The password must be at least 8 characters.',
-                default => null
+            validate: function (string $value): ?string {
+                $validator = Validator::make(
+                    ['password' => $value],
+                    ['password' => ['required', 'string', Password::defaults()]]
+                );
+
+                return $validator->fails()
+                    ? (string) $validator->errors()->first('password')
+                    : null;
             }
         );
 

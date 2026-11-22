@@ -19,6 +19,7 @@ use Webkul\Security\Http\Middleware\EnforceAdminMfa;
 use Webkul\Security\Listeners\DeepHealthCheckListener;
 use Webkul\Security\Listeners\SecurityEventSubscriber;
 use Webkul\Security\Support\CoreConfigEncryptor;
+use Webkul\Security\Support\PasswordPolicy;
 
 class SecurityServiceProvider extends ServiceProvider
 {
@@ -62,6 +63,8 @@ class SecurityServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        PasswordPolicy::register();
+
         $this->mergeConfigFrom(dirname(__DIR__).'/Config/security.php', 'security');
 
         $this->mergeConfigFrom(dirname(__DIR__).'/Config/menu.php', 'menu.admin');

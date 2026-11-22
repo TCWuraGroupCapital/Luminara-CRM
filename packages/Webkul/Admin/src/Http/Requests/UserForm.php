@@ -3,6 +3,7 @@
 namespace Webkul\Admin\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
 class UserForm extends FormRequest
 {
@@ -28,7 +29,9 @@ class UserForm extends FormRequest
         $this->rules = [
             'name' => 'required',
             'email' => 'email|unique:users,email',
-            'password' => 'nullable',
+            'password' => $this->isMethod('PUT')
+                ? ['nullable', 'string', Password::defaults()]
+                : ['required', 'string', Password::defaults()],
             'password_confirmation' => 'nullable|required_with:password|same:password',
             'status' => 'sometimes',
             'role_id' => 'required',

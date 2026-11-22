@@ -20,9 +20,10 @@ export const ADMIN_EMAIL = "admin@example.com";
 export const ADMIN_PASSWORD = "admin123";
 
 /**
- * Password handed to every user these suites create. Kept above Krayin's six character minimum.
+ * Password handed to every user these suites create.
+ * 12 or more characters, with upper and lower case letters and a number.
  */
-export const TEST_PASSWORD = "password123";
+export const TEST_PASSWORD = "LuminaraStaff4821";
 
 export type ViewPermission = "global" | "group" | "individual";
 

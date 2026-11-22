@@ -47,8 +47,8 @@ function userUpdatePayload(User $user, array $overrides = []): array
         'role_id' => $user->role_id,
         'view_permission' => $user->view_permission,
         'status' => 1,
-        'password' => 'taken-over-123',
-        'confirm_password' => 'taken-over-123',
+        'password' => 'TakenOver-1234',
+        'confirm_password' => 'TakenOver-1234',
     ], $overrides);
 }
 
@@ -123,7 +123,7 @@ it('still lets the editor manage a user they created', function () {
         ->putJson(route('admin.settings.users.update', $own->id), userUpdatePayload($own))
         ->assertOk();
 
-    expect(Hash::check('taken-over-123', $own->fresh()->password))->toBeTrue();
+    expect(Hash::check('TakenOver-1234', $own->fresh()->password))->toBeTrue();
 });
 
 it('still lets an administrator manage any user', function () {
@@ -133,5 +133,5 @@ it('still lets an administrator manage any user', function () {
         ->putJson(route('admin.settings.users.update', $victim->id), userUpdatePayload($victim))
         ->assertOk();
 
-    expect(Hash::check('taken-over-123', $victim->fresh()->password))->toBeTrue();
+    expect(Hash::check('TakenOver-1234', $victim->fresh()->password))->toBeTrue();
 });

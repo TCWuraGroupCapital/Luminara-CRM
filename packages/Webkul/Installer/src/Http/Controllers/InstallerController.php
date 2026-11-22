@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
+use Illuminate\Validation\Rules\Password;
 use Webkul\Installer\Helpers\DatabaseManager;
 use Webkul\Installer\Helpers\EnvironmentManager;
 use Webkul\Installer\Helpers\ServerRequirements;
@@ -116,6 +117,11 @@ class InstallerController extends Controller
     public function adminConfigSetup(): bool
     {
         $this->abortIfInstalled();
+
+        request()->validate([
+            'password' => ['required', 'string', Password::defaults()],
+            'confirm_password' => ['required', 'same:password'],
+        ]);
 
         $password = password_hash(request()->input('password'), PASSWORD_BCRYPT, ['cost' => 10]);
 
