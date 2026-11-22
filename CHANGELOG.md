@@ -4,6 +4,8 @@ This changelog consists of the bug & security fixes and new features being inclu
 
 ## **v2.2.9 (Upcoming)**
 
+* [security] Dependency updates are now proposed every week, and continuous integration fails when Composer reports an advisory or when an npm lockfile has a high-severity advisory. The root JavaScript lockfile picks up patched follow-redirects, source-map-js, and Vite 6.4. The admin assets move from Vite 5 (which has no patched release for these advisories) to the same Vite 6 line the installer and web form already build with, including the Vue plugin those packages use.
+
 * [fixed] The production image sent two `Content-Security-Policy` headers on `/tma`: the mini app's own, and Apache's identical copy, which was no longer stripped once the app started sending its policy. Apache now leaves CSP entirely to the app. The Docker smoke test now checks the app's policy on the sign-in page instead of the old Apache-only header on `/up`. Three stale PHPStan baseline entries for the error handler were removed, and a Pint style issue in a test was fixed.
 
 * [feature] Added `Webkul\Sso`: single sign-on through any OpenID Connect provider, behind `LUMINARA_SSO` (off by default). Set-up for Google Workspace is in `docs/sso-google-workspace.md`.

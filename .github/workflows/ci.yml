@@ -85,3 +85,42 @@ jobs:
 
       - name: Run Pest Suite
         run: php artisan test --compact
+
+  dependency-audit:
+    runs-on: ubuntu-latest
+    name: Dependency Audit
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer:v2
+
+      # Reads composer.lock. Fails on any known advisory, including highs.
+      - name: Composer audit
+        run: composer audit
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # One lockfile per package.json: repo root, Admin, Installer, and WebForm.
+      # --audit-level=high fails the job on high and critical advisories.
+      - name: npm audit each lockfile
+        run: |
+          set -euo pipefail
+          find . -name package-lock.json \
+            -not -path '*/node_modules/*' \
+            -not -path './vendor/*' | sort | while IFS= read -r lock; do
+            dir="$(dirname "$lock")"
+            echo "npm audit --audit-level=high in ${dir}"
+            npm audit --audit-level=high --prefix "$dir"
+          done
