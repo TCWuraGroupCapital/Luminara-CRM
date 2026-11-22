@@ -1,0 +1,85 @@
+name: Coverage
+
+on:
+  push:
+    branches: [main, '2.2']
+  pull_request:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: coverage-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    name: PHP 8.3 Pest coverage (pcov)
+    timeout-minutes: 60
+
+    # Measured 61.85% (17504/28301 lines) with pcov on CI. The floor is
+    # that number rounded down. Raise it when coverage is meant to move up.
+    env:
+      COVERAGE_MIN: "61"
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: krayin
+        ports:
+          - 3306
+        options: --health-cmd="mysqladmin ping -uroot -proot" --health-interval=10s --health-timeout=5s --health-retries=5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: bcmath, calendar, curl, exif, gd, imap, intl, mbstring, openssl, pcntl, pdo, pdo_mysql, sodium, tokenizer, zip
+          coverage: pcov
+          ini-values: error_reporting=E_ALL, pcov.directory=${{ github.workspace }}, pcov.exclude=~vendor~
+          tools: composer:v2
+
+      - name: Install Composer Dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Configure Testing Environment
+        run: |
+          cp .env.example .env
+          sed -i "s|^\(APP_ENV=\s*\).*$|\1testing|" .env
+          sed -i "s|^\(DB_HOST=\s*\).*$|\1127.0.0.1|" .env
+          sed -i "s|^\(DB_PORT=\s*\).*$|\1${{ job.services.mysql.ports['3306'] }}|" .env
+          sed -i "s|^\(DB_DATABASE=\s*\).*$|\1krayin|" .env
+          sed -i "s|^\(DB_USERNAME=\s*\).*$|\1root|" .env
+          sed -i "s|^\(DB_PASSWORD=\s*\).*$|\1root|" .env
+          php artisan key:generate --force
+
+      - name: Run Krayin Installer
+        run: php artisan krayin-crm:install --skip-env-check --skip-admin-creation --no-interaction
+
+      - name: Run Pest suite with pcov
+        run: |
+          mkdir -p build/coverage
+          php artisan test --compact --coverage --coverage-clover=build/coverage/clover.xml
+
+      - name: Upload Clover XML
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: clover-coverage
+          path: build/coverage/clover.xml
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Print line coverage and enforce floor
+        if: ${{ !cancelled() }}
+        run: php bin/coverage-line-total.php build/coverage/clover.xml "$COVERAGE_MIN"

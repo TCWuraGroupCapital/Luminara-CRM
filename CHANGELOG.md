@@ -4,6 +4,10 @@ This changelog consists of the bug & security fixes and new features being inclu
 
 ## **v2.2.9 (Upcoming)**
 
+* [fixed] The secret scan ignores two historical test-password findings on the strong-password branch. That branch replaced the password, but the scan reads every branch, so the older commit still matched.
+
+* [enhancement] CI measures PHP line coverage in a separate job (`.github/workflows/coverage.yml`). The Pest suite runs under pcov, uploads Clover XML, prints the total line coverage, and fails if it drops below 61% (measured at 61.85%, 17,504 of 28,301 lines, rounded down). The percentage covers `app/`, `config/`, `routes/`, the bootstrap entry files, and `packages/Webkul`. Translation catalogues, views, migrations, and seeders are left out. The README records 660 PHP tests and 15,145 assertions.
+
 * [fixed] The production image sent two `Content-Security-Policy` headers on `/tma`: the mini app's own, and Apache's identical copy, which was no longer stripped once the app started sending its policy. Apache now leaves CSP entirely to the app. The Docker smoke test now checks the app's policy on the sign-in page instead of the old Apache-only header on `/up`. Three stale PHPStan baseline entries for the error handler were removed, and a Pint style issue in a test was fixed.
 
 * [feature] Added `Webkul\Sso`: single sign-on through any OpenID Connect provider, behind `LUMINARA_SSO` (off by default). Set-up for Google Workspace is in `docs/sso-google-workspace.md`.

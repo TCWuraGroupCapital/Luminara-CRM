@@ -5,6 +5,7 @@
 .php_cs.cache
 .phpunit.cache/
 .phpunit.result.cache
+/build/
 .vscode
 .vagrant
 *.hot
