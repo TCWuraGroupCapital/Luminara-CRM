@@ -16,10 +16,77 @@
         </testsuite>
     </testsuites>
 
+    <!-- Line coverage is application code: app/, config/, routes/, the two bootstrap
+         entry files, and packages/Webkul. Translation catalogues, views, migrations,
+         and seeders are data or templates, so they stay out of the percentage the
+         coverage job guards. -->
     <source>
         <include>
             <directory suffix=".php">./app</directory>
+            <directory suffix=".php">./config</directory>
+            <directory suffix=".php">./routes</directory>
+            <directory suffix=".php">./packages/Webkul</directory>
+            <file>./bootstrap/app.php</file>
+            <file>./bootstrap/providers.php</file>
         </include>
+        <exclude>
+            <directory suffix=".php">./packages/Webkul/Activity/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Admin/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Admin/src/Resources/lang</directory>
+            <directory suffix=".php">./packages/Webkul/Admin/src/Resources/views</directory>
+            <directory suffix=".php">./packages/Webkul/Agent/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Agent/src/Resources/lang</directory>
+            <directory suffix=".php">./packages/Webkul/Agent/src/Resources/views</directory>
+            <directory suffix=".php">./packages/Webkul/Attribute/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Automation/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Contact/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Core/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/DataGrid/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/DataTransfer/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Email/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/EmailTemplate/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Experiment/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Experiment/src/Resources/lang</directory>
+            <directory suffix=".php">./packages/Webkul/Experiment/src/Resources/views</directory>
+            <directory suffix=".php">./packages/Webkul/GoogleContact/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/GoogleContact/src/Resources/lang</directory>
+            <directory suffix=".php">./packages/Webkul/Gourwest/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Gourwest/src/Resources/lang</directory>
+            <directory suffix=".php">./packages/Webkul/Gourwest/src/Resources/views</directory>
+            <directory suffix=".php">./packages/Webkul/Installer/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Installer/src/Database/Seeders</directory>
+            <directory suffix=".php">./packages/Webkul/Installer/src/Resources/lang</directory>
+            <directory suffix=".php">./packages/Webkul/Installer/src/Resources/views</directory>
+            <directory suffix=".php">./packages/Webkul/Lead/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Ledger/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Ledger/src/Resources/lang</directory>
+            <directory suffix=".php">./packages/Webkul/Ledger/src/Resources/views</directory>
+            <directory suffix=".php">./packages/Webkul/Legal/src/Resources/lang</directory>
+            <directory suffix=".php">./packages/Webkul/Legal/src/Resources/views</directory>
+            <directory suffix=".php">./packages/Webkul/Marketing/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Privacy/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Privacy/src/Resources/lang</directory>
+            <directory suffix=".php">./packages/Webkul/Privacy/src/Resources/views</directory>
+            <directory suffix=".php">./packages/Webkul/Product/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Quote/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Security/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Security/src/Resources/lang</directory>
+            <directory suffix=".php">./packages/Webkul/Security/src/Resources/views</directory>
+            <directory suffix=".php">./packages/Webkul/Sso/src/Resources/lang</directory>
+            <directory suffix=".php">./packages/Webkul/Sso/src/Resources/views</directory>
+            <directory suffix=".php">./packages/Webkul/Tag/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Tma/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Tma/src/Resources/lang</directory>
+            <directory suffix=".php">./packages/Webkul/Tma/src/Resources/views</directory>
+            <directory suffix=".php">./packages/Webkul/User/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Warehouse/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/WebForm/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/WebForm/src/Resources/lang</directory>
+            <directory suffix=".php">./packages/Webkul/WebForm/src/Resources/views</directory>
+            <directory suffix=".php">./packages/Webkul/Workspace/src/Database/Migrations</directory>
+            <directory suffix=".php">./packages/Webkul/Workspace/src/Resources/lang</directory>
+            <directory suffix=".php">./packages/Webkul/Workspace/src/Resources/views</directory>
+        </exclude>
     </source>
 
     <php>
