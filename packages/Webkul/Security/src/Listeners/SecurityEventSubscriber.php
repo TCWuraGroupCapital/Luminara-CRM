@@ -172,10 +172,6 @@ class SecurityEventSubscriber
         $events->listen('settings.experiment.delete.before', static function (mixed $id): void {
             SecurityAuditRecorder::record('experiment.deleted', 'experiment', is_scalar($id) ? $id : null);
         });
-
-        $events->listen('lead.delete.before', static function (mixed $id): void {
-            SecurityAuditRecorder::record('lead.deleted', 'lead', is_scalar($id) ? $id : null);
-        });
     }
 
     private function normalizeEmail(mixed $email): string
