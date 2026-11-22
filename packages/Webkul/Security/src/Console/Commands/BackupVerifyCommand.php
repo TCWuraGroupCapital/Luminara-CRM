@@ -4,6 +4,9 @@ namespace Webkul\Security\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
+use Webkul\Security\Support\BackupCipher;
+use Webkul\Security\Support\BackupManifest;
 
 class BackupVerifyCommand extends Command
 {
@@ -12,7 +15,7 @@ class BackupVerifyCommand extends Command
                             {--disk= : Storage disk override}
                             {--path= : Directory path override}';
 
-    protected $description = 'Verify SHA-256 digest, HMAC authenticity, gzip decompression, and per-table row counts of a logical backup.';
+    protected $description = 'Verify SHA-256 digest, HMAC authenticity, gzip decompression, and per-table row counts of a logical backup. Accepts secretstream-encrypted archives and legacy plain gzip.';
 
     public function handle(): int
     {
@@ -29,6 +32,14 @@ class BackupVerifyCommand extends Command
 
         if ($signingKey === '' && app()->isProduction()) {
             $this->error('APP_KEY must be configured in production to verify backup manifests.');
+
+            return self::FAILURE;
+        }
+
+        try {
+            BackupCipher::assertConfiguredKey();
+        } catch (RuntimeException $e) {
+            $this->error($e->getMessage());
 
             return self::FAILURE;
         }
@@ -80,7 +91,7 @@ class BackupVerifyCommand extends Command
         if (
             str_contains($archivePath, '..')
             || ! str_starts_with($archivePath, $baseDir.'/')
-            || preg_match('/^luminara_backup_\d{8}_\d{6}\.ndjson\.gz$/', basename($archivePath)) !== 1
+            || preg_match(BackupCipher::ARCHIVE_BASENAME, basename($archivePath)) !== 1
             || ! $disk->exists($archivePath)
         ) {
             $this->error("Archive [{$archivePath}] referenced by manifest is missing or invalid.");
@@ -95,6 +106,8 @@ class BackupVerifyCommand extends Command
 
             return self::FAILURE;
         }
+
+        $gzipPath = $tempFile;
 
         try {
             $readStream = $disk->readStream($archivePath);
@@ -121,7 +134,15 @@ class BackupVerifyCommand extends Command
             $actualSha = (string) hash_file('sha256', $tempFile);
 
             if (! hash_equals((string) $manifest['sha256'], $actualSha)) {
-                $this->error('Backup SHA-256 digest mismatch — archive is corrupted or tampered.');
+                $this->error('Backup SHA-256 digest mismatch. The archive is corrupted or tampered.');
+
+                return self::FAILURE;
+            }
+
+            try {
+                $encryption = BackupCipher::encryptionFromManifest($manifest);
+            } catch (RuntimeException $e) {
+                $this->error($e->getMessage());
 
                 return self::FAILURE;
             }
@@ -129,21 +150,9 @@ class BackupVerifyCommand extends Command
             $expectedTotalRows = (int) $manifest['total_rows'];
             $expectedTables = (array) $manifest['tables'];
 
-            $signablePayload = [
-                'version' => (int) ($manifest['version'] ?? 1),
-                'archive' => $archivePath,
-                'size_bytes' => (int) ($manifest['size_bytes'] ?? 0),
-                'sha256' => $actualSha,
-                'total_tables' => (int) ($manifest['total_tables'] ?? count($expectedTables)),
-                'total_rows' => $expectedTotalRows,
-                'tables' => $expectedTables,
-            ];
+            $signablePayload = BackupManifest::signableFromManifest($manifest, $archivePath, $actualSha, $encryption);
 
-            $expectedHmac = hash_hmac(
-                'sha256',
-                json_encode($signablePayload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
-                $effectiveKey
-            );
+            $expectedHmac = BackupManifest::hmac($signablePayload, $effectiveKey);
 
             if (! hash_equals($expectedHmac, $manifest['hmac_sha256'])) {
                 $this->error('Backup manifest HMAC signature mismatch.');
@@ -151,7 +160,23 @@ class BackupVerifyCommand extends Command
                 return self::FAILURE;
             }
 
-            $gz = @gzopen($tempFile, 'rb');
+            $encryptedName = str_ends_with($archivePath, '.ndjson.gz.enc');
+
+            if ($encryptedName !== ($encryption !== null)) {
+                $this->error('Archive name does not match the manifest encryption block.');
+
+                return self::FAILURE;
+            }
+
+            try {
+                $gzipPath = BackupCipher::materializeGzip($tempFile, $manifest);
+            } catch (RuntimeException $e) {
+                $this->error($e->getMessage());
+
+                return self::FAILURE;
+            }
+
+            $gz = @gzopen($gzipPath, 'rb');
 
             if ($gz === false) {
                 $this->error('Failed to open gzip backup payload.');
@@ -204,6 +229,10 @@ class BackupVerifyCommand extends Command
                 gzclose($gz);
             }
         } finally {
+            if ($gzipPath !== $tempFile) {
+                @unlink($gzipPath);
+            }
+
             @unlink($tempFile);
         }
 
@@ -221,7 +250,8 @@ class BackupVerifyCommand extends Command
             return self::FAILURE;
         }
 
-        $this->info("Backup [{$archivePath}] verified intact (SHA-256 + HMAC + {$totalVerifiedRows} rows).");
+        $mode = $encryption !== null ? 'SHA-256 + HMAC + secretstream' : 'SHA-256 + HMAC';
+        $this->info("Backup [{$archivePath}] verified intact ({$mode} + {$totalVerifiedRows} rows).");
 
         return self::SUCCESS;
     }

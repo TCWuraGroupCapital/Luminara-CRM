@@ -1,4 +1,4 @@
-# Luminara CRM — GitHub & Cloudflare Enterprise Deployment Runbook
+# Luminara CRM: GitHub & Cloudflare Enterprise Deployment Runbook
 
 This runbook documents the verified production deployment architecture for **Luminara CRM** across **GitHub Actions CI/CD** (`TCWuraGroupCapital/Luminara-CRM`) and **Cloudflare** (Zero Trust Tunnel `cloudflared`, WAF, Cache Rules, and Edge TLS).
 
@@ -39,7 +39,7 @@ On push/PR to `main` or `2.2`, GitHub Actions automatically runs:
 
 ### 2.1 Configure Production Environment Secrets
 
-Create a root `.env.prod` (never committed to git — `.env.*` is ignored in `.gitignore`) with strong, unique secrets:
+Create a root `.env.prod` (never committed to git, because `.env.*` is ignored in `.gitignore`) with strong, unique secrets:
 
 ```dotenv
 APP_NAME="Luminara CRM"
@@ -153,14 +153,14 @@ In Cloudflare Zero Trust (`Networks > Tunnels`):
    - **Subdomain / Domain:** `crm.yourdomain.com`
    - **Service:** `http://app:80`
 2. No inbound ports (`80` or `443`) need to be opened on the host firewall (`compose.prod.yaml` binds only to loopback `127.0.0.1:8080` and exposes zero public host interfaces; `cloudflared` dials outbound over QUIC/HTTP2 on the internal `172.31.250.0/28` edge bridge).
-3. Apache `mod_remoteip` trusts only `127.0.0.1`, `::1`, `172.31.250.0/28`, and official Cloudflare IPv4/IPv6 CIDR blocks when reading `CF-Connecting-IP` — spoofed `CF-Connecting-IP` headers from untrusted peers are ignored.
+3. Apache `mod_remoteip` trusts only `127.0.0.1`, `::1`, `172.31.250.0/28`, and official Cloudflare IPv4/IPv6 CIDR blocks when reading `CF-Connecting-IP`. Spoofed `CF-Connecting-IP` headers from untrusted peers are ignored.
 
 ### 3.2 SSL/TLS & Edge Security
 1. **SSL/TLS Encryption Mode:** **Full (Strict)** (or Tunnel HTTP origin over encrypted `cloudflared` QUIC channel). Enable **Always Use HTTPS** and **Minimum TLS Version: TLS 1.2**.
 2. **Cache Rules (`Caching > Cache Rules`):**
-   - **Rule 1 — Immutable Vite Assets (`Cache Everything`, Edge TTL `1 year`):**
+   - **Rule 1: Immutable Vite Assets (`Cache Everything`, Edge TTL `1 year`):**
      `http.request.uri.path matches "^/(admin|installer|webform)/build/assets/"`
-   - **Rule 2 — Bypass Dynamic CRM, API, TMA, Ledger, A/B & Auth Endpoints (`Bypass Cache`):**
+   - **Rule 2: Bypass Dynamic CRM, API, TMA, Ledger, A/B & Auth Endpoints (`Bypass Cache`):**
      `http.request.uri.path matches "^/(admin|api|tma|receipts|experiments|web-forms|up|llms\.txt|\.well-known/agent\.json)"`
 3. **WAF / Bot Fight Mode Exceptions (`Security > WAF > Custom Rules`):**
    - Skip *Managed Challenge / JS Challenge / Super Bot Fight Mode* (while keeping OWASP SQLi/XSS Managed Rules active) on:
@@ -198,8 +198,8 @@ Limits to know: the Telegram bot and mini app only serve the main workspace, and
 
 - **Automated Daily & Hourly Schedule (`scheduler` container):**
   - Hourly: `php artisan luminara:ledger-seal` seals pending `DataBlock` records into a signed RFC 6962 binary Merkle Epoch (`ledger_epochs`) through the configured `LEDGER_ANCHOR_DRIVER` (`local` default; `ton` when ready for on-chain anchoring).
-  - `02:00` daily: `php artisan luminara:backup` writes a gzip-compressed NDJSON logical snapshot (`storage/app/backups/luminara_backup_YYYYMMDD_HHMMSS.ndjson.gz`) plus a `.manifest.json` signed with `SHA-256` and `HMAC-SHA256`, and prunes archives older than `SECURITY_BACKUP_RETENTION_DAYS` (`14` days default).
-  - `02:30` daily: `php artisan luminara:backup-verify` streams the latest archive to verify its SHA-256 digest, HMAC signature, gzip integrity, and per-table row counts.
+  - `02:00` daily: `php artisan luminara:backup` writes a logical snapshot plus a `.manifest.json` signed with SHA-256 and HMAC-SHA256 (`APP_KEY`), and prunes archives older than `SECURITY_BACKUP_RETENTION_DAYS` (14 days by default). With `LUMINARA_BACKUP_KEY` set, the snapshot is encrypted with libsodium secretstream and the manifest records the key id. Without that key the snapshot stays plain gzip NDJSON, which verify and restore still accept. Recovery objectives are RPO 24h and RTO 4h. See [docs/backups.md](backups.md).
+  - `02:30` daily: `php artisan luminara:backup-verify` checks the latest archive: SHA-256, HMAC, secretstream decryption when the manifest says the archive is encrypted, gzip integrity, and per-table row counts.
 - **On-Demand Backup, Ledger Verification & Agent Passport Issuance:**
   ```bash
   docker compose -f compose.prod.yaml --env-file .env.prod exec app php artisan luminara:backup
@@ -228,7 +228,7 @@ Backups on the same disk as the database don't protect against losing that disk.
 - Use a bucket-scoped key. For Cloudflare R2, that's an API token with *Object Read & Write* on the one bucket. Its S3 access key ID is the token ID and its secret is the SHA-256 of the token value.
 
 1. Fill in `BACKUP_S3_*` and `BACKUP_CRYPT_*` in `.env.prod` (see `.env.example`).
-2. Store `BACKUP_CRYPT_PASSWORD`, `BACKUP_CRYPT_SALT` **and** `APP_KEY` in your password manager. Without them the off-site copy can't be decrypted or verified.
+2. Store `BACKUP_CRYPT_PASSWORD`, `BACKUP_CRYPT_SALT`, `APP_KEY`, and `LUMINARA_BACKUP_KEY` (when backups are encrypted) in your password manager. The crypt keys read the bucket. `APP_KEY` verifies the manifest. `LUMINARA_BACKUP_KEY` reads an encrypted archive. They are separate secrets. See [docs/backups.md](backups.md).
 3. Start the service:
 
 ```bash
@@ -238,7 +238,7 @@ docker logs luminara-prod-backup-sync-1   # "offsite sync ok <time>" once an hou
 
 ### 4.2 Restore drill (`luminara:backup-restore`)
 
-`luminara:backup-restore` restores a verified backup into a **scratch** database and checks every table's row count against the signed manifest.
+`luminara:backup-restore` restores a verified backup into a **scratch** database and checks every table's row count against the signed manifest. The quarterly checklist, RPO 24h, RTO 4h, and key custody are in [docs/backups.md](backups.md).
 - It refuses the database it runs against and any database that already holds a row. It can never overwrite live data.
 - Moving production onto a restored database is a separate, deliberate step.
 - With `--migrate` it builds the schema from the current code first, so restore with the release that made the backup.
@@ -254,9 +254,10 @@ docker compose -p luminara-prod -f compose.prod.yaml --env-file .env.prod --prof
   latest=$(rclone lsf offsite:app/backups --include "*.manifest.json" | sort | tail -1)
   rclone copy offsite:app/backups /restore --include "${latest%.manifest.json}.*"'
 
-# 2. Restore it with the production APP_KEY. The files must sit under storage/app/backups,
+# 2. Restore it with the production APP_KEY and the LUMINARA_BACKUP_KEY whose id matches the manifest.
+#    Plain archives restore without LUMINARA_BACKUP_KEY. The files must sit under storage/app/backups,
 #    the folder named inside the signed manifest.
-docker run --rm -e APP_KEY -e DB_DATABASE=<any database you may read> -v "$PWD/restore:/var/www/html/storage/app/backups:ro" \
+docker run --rm -e APP_KEY -e LUMINARA_BACKUP_KEY -e DB_DATABASE=<any database you may read> -v "$PWD/restore:/var/www/html/storage/app/backups:ro" \
   <app image> php artisan luminara:backup-restore --database=luminara_crm_restore_drill --migrate --path=backups
 
 # 3. Drop the scratch database and delete ./restore: both hold customer data.

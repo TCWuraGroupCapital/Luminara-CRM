@@ -7,13 +7,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
+use Throwable;
+use Webkul\Security\Support\BackupCipher;
+use Webkul\Security\Support\BackupManifest;
 use Webkul\Security\Support\SecurityAuditRecorder;
 
 class BackupCommand extends Command
 {
     protected $signature = 'luminara:backup {--disk= : Storage disk override} {--path= : Directory path override}';
 
-    protected $description = 'Create a compressed, SHA-256 and HMAC-SHA256 signed logical database backup and prune expired archives.';
+    protected $description = 'Create a compressed, SHA-256 and HMAC-SHA256 signed logical database backup and prune expired archives. Encrypts with LUMINARA_BACKUP_KEY when that key is set.';
 
     public function handle(): int
     {
@@ -35,10 +38,19 @@ class BackupCommand extends Command
         }
 
         $effectiveKey = $signingKey !== '' ? $signingKey : 'luminara-backup-key';
+
+        try {
+            $resolvedKey = BackupCipher::configuredKey();
+        } catch (RuntimeException $e) {
+            $this->error($e->getMessage());
+
+            return self::FAILURE;
+        }
+
+        $rawKey = is_string($resolvedKey) ? $resolvedKey : '';
         $disk = Storage::disk($diskName);
 
         $timestamp = now()->utc()->format('Ymd_His');
-        $archiveRelPath = "{$baseDir}/luminara_backup_{$timestamp}.ndjson.gz";
         $manifestRelPath = "{$baseDir}/luminara_backup_{$timestamp}.manifest.json";
 
         $schema = in_array(DB::connection()->getDriverName(), ['mysql', 'mariadb'], true)
@@ -55,6 +67,7 @@ class BackupCommand extends Command
         $tempFile = tempnam(sys_get_temp_dir(), 'lum_bkp_');
 
         if ($tempFile === false) {
+            BackupCipher::wipe($rawKey);
             throw new RuntimeException('Unable to allocate temporary file for logical backup.');
         }
 
@@ -62,6 +75,7 @@ class BackupCommand extends Command
 
         if ($gz === false) {
             @unlink($tempFile);
+            BackupCipher::wipe($rawKey);
             throw new RuntimeException('Unable to open gzip stream for logical backup.');
         }
 
@@ -78,27 +92,64 @@ class BackupCommand extends Command
                         'row' => (array) $row,
                     ], JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR)."\n";
 
-                    gzwrite($gz, $line);
+                    if (gzwrite($gz, $line) === false) {
+                        throw new RuntimeException("Unable to write a backup row for [{$tableName}].");
+                    }
+
                     $count++;
                     $totalRows++;
                 }
 
                 $tableRowCounts[$tableName] = $count;
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             gzclose($gz);
             @unlink($tempFile);
+            BackupCipher::wipe($rawKey);
 
             throw $e;
         }
 
-        gzclose($gz);
+        if (gzclose($gz) === false) {
+            @unlink($tempFile);
+            BackupCipher::wipe($rawKey);
+
+            throw new RuntimeException('Unable to finish the gzip backup payload.');
+        }
+
+        $encryptedPath = null;
 
         try {
-            $sha256 = (string) hash_file('sha256', $tempFile);
-            $sizeBytes = (int) filesize($tempFile);
+            $uploadPath = $tempFile;
+            $version = BackupCipher::VERSION_PLAIN;
+            $encryption = null;
+            $archiveRelPath = "{$baseDir}/luminara_backup_{$timestamp}.ndjson.gz";
 
-            $readStream = fopen($tempFile, 'rb');
+            if ($rawKey !== '') {
+                $encryptedPath = $tempFile.'.enc';
+                BackupCipher::encryptFile($tempFile, $encryptedPath, $rawKey);
+                $keyId = BackupCipher::keyId($rawKey);
+                BackupCipher::wipe($rawKey);
+                $uploadPath = $encryptedPath;
+                $version = BackupCipher::VERSION_ENCRYPTED;
+                $archiveRelPath .= '.enc';
+                $encryption = [
+                    'algorithm' => BackupCipher::ALGORITHM,
+                    'key_id' => $keyId,
+                ];
+            }
+
+            $hashed = hash_file('sha256', $uploadPath);
+            $measured = filesize($uploadPath);
+
+            if ($hashed === false || $measured === false) {
+                throw new RuntimeException('Unable to hash the backup archive.');
+            }
+
+            $sha256 = $hashed;
+            $sizeBytes = $measured;
+
+            $readStream = fopen($uploadPath, 'rb');
 
             if ($readStream === false) {
                 throw new RuntimeException('Unable to open staged backup archive for streaming upload.');
@@ -113,43 +164,53 @@ class BackupCommand extends Command
                     fclose($readStream);
                 }
             }
+
+            $signablePayload = BackupManifest::signable(
+                $version,
+                $archiveRelPath,
+                $sizeBytes,
+                $sha256,
+                count($tableRowCounts),
+                $totalRows,
+                $tableRowCounts,
+                $encryption
+            );
+
+            $hmac = BackupManifest::hmac($signablePayload, $effectiveKey);
+
+            $manifest = array_merge(
+                ['version' => $version, 'created_at' => now()->utc()->toIso8601String()],
+                $signablePayload,
+                ['hmac_sha256' => $hmac]
+            );
+
+            $disk->put($manifestRelPath, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
         } finally {
+            BackupCipher::wipe($rawKey);
             @unlink($tempFile);
+
+            if (is_string($encryptedPath)) {
+                @unlink($encryptedPath);
+            }
         }
-
-        $signablePayload = [
-            'version' => 1,
-            'archive' => $archiveRelPath,
-            'size_bytes' => $sizeBytes,
-            'sha256' => $sha256,
-            'total_tables' => count($tables),
-            'total_rows' => $totalRows,
-            'tables' => $tableRowCounts,
-        ];
-
-        $hmac = hash_hmac(
-            'sha256',
-            json_encode($signablePayload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
-            $effectiveKey
-        );
-
-        $manifest = array_merge(
-            ['version' => 1, 'created_at' => now()->utc()->toIso8601String()],
-            $signablePayload,
-            ['hmac_sha256' => $hmac]
-        );
-
-        $disk->put($manifestRelPath, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
 
         $this->pruneExpiredBackups($diskName, $baseDir);
 
-        SecurityAuditRecorder::record('system.backup_created', 'backup', $archiveRelPath, [
+        $audit = [
             'sha256' => $sha256,
             'total_tables' => count($tables),
             'total_rows' => $totalRows,
-        ]);
+        ];
 
-        $this->info("Backup created: {$archiveRelPath} ({$totalRows} rows across ".count($tables).' tables).');
+        if ($encryption !== null) {
+            $audit['encrypted'] = true;
+            $audit['key_id'] = $encryption['key_id'];
+        }
+
+        SecurityAuditRecorder::record('system.backup_created', 'backup', $archiveRelPath, $audit);
+
+        $suffix = $encryption !== null ? ', encrypted, key id '.$encryption['key_id'] : '';
+        $this->info("Backup created: {$archiveRelPath} ({$totalRows} rows across ".count($tables)." tables{$suffix}).");
 
         return self::SUCCESS;
     }
@@ -162,7 +223,7 @@ class BackupCommand extends Command
 
         foreach ($disk->files($baseDir) as $file) {
             if (
-                preg_match('/^luminara_backup_\d{8}_\d{6}\.(ndjson\.gz|manifest\.json)$/', basename($file)) === 1
+                preg_match(BackupCipher::STORED_BASENAME, basename($file)) === 1
                 && $disk->lastModified($file) < $cutoff
             ) {
                 $disk->delete($file);

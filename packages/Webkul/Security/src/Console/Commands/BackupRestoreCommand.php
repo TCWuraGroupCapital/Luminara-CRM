@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Throwable;
+use Webkul\Security\Support\BackupCipher;
 use Webkul\Security\Support\SecurityAuditRecorder;
 
 /**
@@ -114,7 +115,7 @@ class BackupRestoreCommand extends Command
                 return self::FAILURE;
             }
 
-            $this->loadRows($disk->readStream((string) $manifest['archive']), array_keys($expected));
+            $this->loadRows($disk->readStream((string) $manifest['archive']), array_keys($expected), $manifest);
 
             $mismatches = [];
 
@@ -205,8 +206,9 @@ class BackupRestoreCommand extends Command
      *
      * @param  resource|null  $stream
      * @param  array<int, string>  $tables
+     * @param  array<string, mixed>  $manifest
      */
-    private function loadRows($stream, array $tables): void
+    private function loadRows($stream, array $tables, array $manifest): void
     {
         if (! is_resource($stream)) {
             throw new RuntimeException('Unable to read the backup archive.');
@@ -215,17 +217,27 @@ class BackupRestoreCommand extends Command
         $tempFile = tempnam(sys_get_temp_dir(), 'lum_rst_');
 
         if ($tempFile === false) {
+            fclose($stream);
             throw new RuntimeException('Unable to allocate a temporary file.');
         }
 
         $connection = DB::connection(self::CONNECTION);
         $schema = Schema::connection(self::CONNECTION);
+        $gzipPath = $tempFile;
 
         try {
             $out = fopen($tempFile, 'wb');
+
+            if ($out === false) {
+                fclose($stream);
+                throw new RuntimeException('Unable to allocate a temporary file.');
+            }
+
             stream_copy_to_stream($stream, $out);
             fclose($out);
             fclose($stream);
+
+            $gzipPath = BackupCipher::materializeGzip($tempFile, $manifest);
 
             $schema->disableForeignKeyConstraints();
 
@@ -233,7 +245,7 @@ class BackupRestoreCommand extends Command
                 $connection->table($table)->truncate();
             }
 
-            $gz = gzopen($tempFile, 'rb');
+            $gz = gzopen($gzipPath, 'rb');
 
             if ($gz === false) {
                 throw new RuntimeException('Unable to open the gzip archive.');
@@ -266,6 +278,11 @@ class BackupRestoreCommand extends Command
             }
         } finally {
             $schema->enableForeignKeyConstraints();
+
+            if ($gzipPath !== $tempFile) {
+                @unlink($gzipPath);
+            }
+
             @unlink($tempFile);
         }
     }
