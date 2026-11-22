@@ -6,6 +6,8 @@ This changelog consists of the bug & security fixes and new features being inclu
 
 * [fixed] The secret scan checks the branch being built. It was also reading every other open branch, so a test password on a separate branch failed unrelated pull requests.
 
+* [fixed] A logical backup that cannot finish writing or hashing its archive now stops, instead of signing a short file.
+
 * [feature] Logical database backups can be encrypted with a key that is separate from `APP_KEY`.
     * Set `LUMINARA_BACKUP_KEY` (print one with `php artisan luminara:backup-key`) and new archives are gzip NDJSON encrypted with libsodium secretstream (XChaCha20-Poly1305). The signed manifest records the key id. `luminara:backup-verify` and `luminara:backup-restore` accept those archives and the older plain gzip archives.
     * `docs/backups.md` states the recovery objectives (RPO 24h, RTO 4h), how the key is kept, and a quarterly restore drill checklist.

@@ -198,6 +198,30 @@ it('encrypts a backup, verifies it, and restores every row into an empty databas
     }
 });
 
+it('refuses a wrong backup key before creating the scratch database', function () {
+    Storage::fake('local');
+
+    $scratch = scratchBackupDatabase('wrong');
+
+    withBackupKey(backupEncryptionKey(), function () {
+        expect(Artisan::call('luminara:backup', ['--disk' => 'local', '--path' => 'wrong']))->toBe(0);
+    });
+
+    withBackupKey(backupEncryptionKey(), function () use ($scratch) {
+        expect(Artisan::call('luminara:backup-restore', [
+            '--database' => $scratch,
+            '--disk' => 'local',
+            '--path' => 'wrong',
+        ]))->toBe(1)
+            ->and(Artisan::output())->toContain('nothing was restored');
+    });
+
+    expect(backupEncryptionServer()->select(
+        'SELECT schema_name FROM information_schema.schemata WHERE schema_name = ?',
+        [$scratch]
+    ))->toBe([]);
+});
+
 it('still verifies and restores a legacy plain archive when a backup key is configured', function () {
     Storage::fake('local');
 

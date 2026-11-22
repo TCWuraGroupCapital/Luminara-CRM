@@ -92,7 +92,10 @@ class BackupCommand extends Command
                         'row' => (array) $row,
                     ], JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR)."\n";
 
-                    gzwrite($gz, $line);
+                    if (gzwrite($gz, $line) === false) {
+                        throw new RuntimeException("Unable to write a backup row for [{$tableName}].");
+                    }
+
                     $count++;
                     $totalRows++;
                 }
@@ -107,7 +110,12 @@ class BackupCommand extends Command
             throw $e;
         }
 
-        gzclose($gz);
+        if (gzclose($gz) === false) {
+            @unlink($tempFile);
+            BackupCipher::wipe($rawKey);
+
+            throw new RuntimeException('Unable to finish the gzip backup payload.');
+        }
 
         $encryptedPath = null;
 
@@ -131,8 +139,15 @@ class BackupCommand extends Command
                 ];
             }
 
-            $sha256 = (string) hash_file('sha256', $uploadPath);
-            $sizeBytes = (int) filesize($uploadPath);
+            $hashed = hash_file('sha256', $uploadPath);
+            $measured = filesize($uploadPath);
+
+            if ($hashed === false || $measured === false) {
+                throw new RuntimeException('Unable to hash the backup archive.');
+            }
+
+            $sha256 = $hashed;
+            $sizeBytes = $measured;
 
             $readStream = fopen($uploadPath, 'rb');
 

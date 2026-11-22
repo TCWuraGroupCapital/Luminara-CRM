@@ -29,17 +29,36 @@ Plain archives written before encryption was turned on still verify and restore.
 
 ## Key custody
 
-1. Generate a key on a trusted machine: `php artisan luminara:backup-key`.
-2. Put `LUMINARA_BACKUP_KEY=...` in the secret store. `.env.example` ships the variable empty. Do not commit the value.
-3. Confirm the id with `php artisan luminara:backup-key --show`. The same id is `encryption.key_id` in each signed manifest.
-4. Keep `APP_KEY`, `LUMINARA_BACKUP_KEY`, `BACKUP_CRYPT_PASSWORD`, and `BACKUP_CRYPT_SALT` in a password manager the production host cannot read. You need all four to download an off-site copy, decrypt the bucket layer, decrypt the archive, and trust the manifest.
-5. Losing `LUMINARA_BACKUP_KEY` makes every archive with that key id unreadable. There is no second copy of the key inside the product.
-6. Keep a previous key until every archive that names its id has aged out of host retention and off-site retention. To restore one of those archives, put that key in `LUMINARA_BACKUP_KEY` for the restore command. The command refuses a key whose id does not match the manifest.
-7. `LUMINARA_BACKUP_KEY` has to be a different 32-byte key from `APP_KEY`. The backup command rejects a reuse.
-8. After setting or rotating the key, recreate the app and the scheduler so the process environment picks it up. New backups then use the new key. Older archives stay tied to the key id in their manifest.
-9. `BACKUP_CRYPT_PASSWORD` and `BACKUP_CRYPT_SALT` encrypt names and bytes in the bucket (`rclone crypt`). They are a second layer. A copy taken from the host disk still needs `LUMINARA_BACKUP_KEY`.
+`LUMINARA_BACKUP_KEY` is a 32-byte libsodium key, standard base64. A `base64:` prefix is also accepted. It has to be a different key from `APP_KEY`. The backup command rejects a reuse. `.env.example` ships the variable empty, which leaves backups as plain gzip.
 
-Generate the value with `php artisan luminara:backup-key`. It prints standard base64 (a `base64:` prefix is also accepted). `php artisan luminara:backup-key --show` prints only the key id.
+### Generation
+
+On a trusted machine:
+
+```bash
+php artisan luminara:backup-key
+php artisan luminara:backup-key --show
+```
+
+The first command prints `LUMINARA_BACKUP_KEY=` and `key_id=`. It does not write the key anywhere. `--show` prints only the id of the key already in the environment. That id is `encryption.key_id` inside each signed manifest.
+
+### Storage
+
+Put the key in a password manager the production host cannot read, labeled with its key id. Set `LUMINARA_BACKUP_KEY` in the secret store for the app and the scheduler (`compose.prod.yaml` passes it through). Recreate those containers after a change so the process environment picks it up. The daily 02:30 `luminara:backup-verify` uses that same variable on the latest archive.
+
+Also keep `APP_KEY`, `BACKUP_CRYPT_PASSWORD`, and `BACKUP_CRYPT_SALT`. The crypt pair only unscrambles the bucket (`rclone crypt`). `APP_KEY` checks the manifest HMAC. `LUMINARA_BACKUP_KEY` is what reads the rows. A copy taken from the host disk still needs the backup key.
+
+### Rotation
+
+1. Generate a new key and store it beside the old one, each labeled with its key id.
+2. Set `LUMINARA_BACKUP_KEY` to the new value and recreate the app and the scheduler.
+3. The next 02:00 backup uses the new id. The 02:30 verify checks that latest archive with the key now in the environment.
+4. Keep the old key until every archive that names its id has aged out of host retention (14 days) and off-site retention (35 days).
+5. To read an older archive, put that archive's key in `LUMINARA_BACKUP_KEY` for the one verify or restore. The command refuses a key whose id does not match the manifest.
+
+### If the key is lost
+
+Archives whose manifest key id matches the lost key cannot be decrypted. `APP_KEY` cannot derive the backup key, and the product keeps no second copy. Verify and restore stop with a key error and do not write a scratch database. Treat the days those archives cover as unrecoverable. Generate a new key and take a fresh backup immediately. Plain archives written while the variable was empty do not need this key.
 
 ## Quarterly restore drill
 
