@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Webkul\Agent\Http\Middleware\AuthenticateAgentToken;
 use Webkul\Contact\Models\Person;
+use Webkul\Security\Models\SecurityAuditLog;
+use Webkul\Security\Support\SecurityAuditRecorder;
 use Webkul\Sso\Http\Controllers\SsoController;
 use Webkul\User\Models\Role;
 use Webkul\User\Models\User;
@@ -661,6 +663,48 @@ it('deletes a business only when it is suspended and the slug is repeated', func
     expect(Workspace::query()->find($golf->id))->toBeNull()
         ->and(WorkspaceMember::query()->where('email', 'owner@golf.isolation.test')->exists())->toBeFalse()
         ->and($exists)->toBeEmpty();
+});
+
+it('keeps a buffered entity audit log in the workspace that changed the record', function () {
+    [$acme, $bravo] = businesses();
+
+    $secret = 'ZebraConfidential'.bin2hex(random_bytes(4));
+    $beforeAcme = workspaceManager()->run($acme, fn () => SecurityAuditLog::query()->where('event', 'person.created')->count());
+    $beforeBravo = workspaceManager()->run($bravo, fn () => SecurityAuditLog::query()->where('event', 'person.created')->count());
+
+    SecurityAuditRecorder::deferWrites(true);
+
+    try {
+        workspaceManager()->run($acme, function () use ($secret, $beforeAcme) {
+            Person::create([
+                'name' => $secret,
+                'emails' => [['value' => $secret.'@acme.test', 'label' => 'work']],
+                'user_id' => User::query()->value('id'),
+            ]);
+
+            expect(SecurityAuditLog::query()->where('event', 'person.created')->count())->toBe($beforeAcme);
+        });
+    } finally {
+        SecurityAuditRecorder::deferWrites(false);
+    }
+
+    workspaceManager()->run($acme, function () use ($acme, $secret, $beforeAcme) {
+        expect(SecurityAuditLog::query()->where('event', 'person.created')->count())->toBe($beforeAcme + 1);
+
+        $log = SecurityAuditLog::query()->where('event', 'person.created')->orderByDesc('id')->first();
+
+        expect($log)->not->toBeNull()
+            ->and($log->workspace)->toBe($acme->slug)
+            ->and($log->metadata['fields'])->toContain('name')
+            ->and($log->request_id)->not->toBeEmpty()
+            ->and(json_encode($log->getAttributes()))->not->toContain($secret);
+    });
+
+    $afterBravo = workspaceManager()->run($bravo, fn () => SecurityAuditLog::query()->where('event', 'person.created')->count());
+
+    expect($afterBravo)->toBe($beforeBravo);
+
+    workspaceManager()->switchToLandlord();
 });
 
 it('welcomes the owner of a new business with first steps', function () {

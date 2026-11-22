@@ -219,6 +219,12 @@ class WorkspaceManager
 
     private function apply(string $database, ?string $cacheSuffix, ?string $diskSuffix): void
     {
+        /**
+         * Fired while the connection still points at the database being left, so a buffered
+         * audit batch can be written there before the name changes.
+         */
+        event('workspace.connection.changing');
+
         config(["database.connections.{$this->connection}.database" => $database]);
 
         DB::purge($this->connection);

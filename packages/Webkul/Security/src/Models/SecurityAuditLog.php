@@ -18,6 +18,8 @@ use Webkul\Security\Contracts\SecurityAuditLog as SecurityAuditLogContract;
  * @property string|null $auditable_id
  * @property string|null $ip_address
  * @property string|null $user_agent
+ * @property string|null $request_id
+ * @property string|null $workspace
  * @property array<string, mixed>|null $metadata
  * @property Carbon $created_at
  */
@@ -35,6 +37,8 @@ class SecurityAuditLog extends Model implements SecurityAuditLogContract
         'auditable_id',
         'ip_address',
         'user_agent',
+        'request_id',
+        'workspace',
         'metadata',
         'created_at',
     ];
@@ -54,5 +58,29 @@ class SecurityAuditLog extends Model implements SecurityAuditLogContract
         static::deleting(static function (): never {
             throw new LogicException('Security audit logs are append-only and cannot be deleted.');
         });
+    }
+
+    /**
+     * Field names recorded for this change. Values are never stored here.
+     *
+     * @return list<string>
+     */
+    public function changedFieldNames(): array
+    {
+        $fields = $this->metadata['fields'] ?? null;
+
+        if (! is_array($fields)) {
+            return [];
+        }
+
+        $names = [];
+
+        foreach ($fields as $field) {
+            if (is_string($field)) {
+                $names[] = $field;
+            }
+        }
+
+        return $names;
     }
 }
