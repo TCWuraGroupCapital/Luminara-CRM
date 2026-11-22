@@ -1,4 +1,4 @@
-# Enterprise Production Stack — Luminara CRM behind Cloudflare Tunnel / WAF
+# Enterprise Production Stack: Luminara CRM behind Cloudflare Tunnel / WAF
 x-app-common: &app-common
   build:
     context: .
@@ -52,6 +52,8 @@ x-app-common: &app-common
     SECURITY_REQUIRE_ADMIN_MFA: "${SECURITY_REQUIRE_ADMIN_MFA:-${SECURITY_ENFORCE_ADMIN_MFA:-true}}"
     SECURITY_MAX_FAILED_LOGINS_PER_EMAIL: "${SECURITY_MAX_FAILED_LOGINS_PER_EMAIL:-10}"
     SECURITY_BACKUP_RETENTION_DAYS: "${SECURITY_BACKUP_RETENTION_DAYS:-14}"
+    # Optional libsodium key for logical backups. Separate from APP_KEY. Empty leaves plain gzip. See docs/backups.md.
+    LUMINARA_BACKUP_KEY: "${LUMINARA_BACKUP_KEY:-}"
     # One database per business. Needs: GRANT ALL ON `<DB_DATABASE>\_ws\_%`.* TO the app's database user.
     LUMINARA_WORKSPACES: "${LUMINARA_WORKSPACES:-false}"
     LUMINARA_SIGNUP: "${LUMINARA_SIGNUP:-off}"

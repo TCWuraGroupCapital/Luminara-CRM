@@ -27,6 +27,12 @@ return [
     'backup_retention_days' => (int) env('SECURITY_BACKUP_RETENTION_DAYS', 14),
 
     /**
+     * Optional 32-byte libsodium key (standard base64) for backup encryption.
+     * Separate from APP_KEY. Empty keeps plain gzip archives.
+     */
+    'backup_key' => env('LUMINARA_BACKUP_KEY', ''),
+
+    /**
      * Content-Security-Policy for HTML pages: enforce (default), report-only (browsers only
      * warn in the console, for checking a new page) or off.
      */

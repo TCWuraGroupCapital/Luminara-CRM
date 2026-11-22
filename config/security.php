@@ -25,4 +25,10 @@ return [
     'backup_path' => env('SECURITY_BACKUP_PATH', 'backups'),
 
     'backup_retention_days' => (int) env('SECURITY_BACKUP_RETENTION_DAYS', 14),
+
+    /**
+     * Optional 32-byte libsodium key (standard base64) for backup encryption.
+     * Separate from APP_KEY. Empty keeps plain gzip archives.
+     */
+    'backup_key' => env('LUMINARA_BACKUP_KEY', ''),
 ];

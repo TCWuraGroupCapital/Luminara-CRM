@@ -11,6 +11,7 @@ use Illuminate\Support\ServiceProvider;
 use Webkul\Core\Models\CoreConfig;
 use Webkul\Core\ViewRenderEventManager;
 use Webkul\Security\Console\Commands\BackupCommand;
+use Webkul\Security\Console\Commands\BackupKeyCommand;
 use Webkul\Security\Console\Commands\BackupRestoreCommand;
 use Webkul\Security\Console\Commands\BackupVerifyCommand;
 use Webkul\Security\Console\Commands\ProvisionCommand;
@@ -52,6 +53,7 @@ class SecurityServiceProvider extends ServiceProvider
             $this->commands([
                 ProvisionCommand::class,
                 BackupCommand::class,
+                BackupKeyCommand::class,
                 BackupVerifyCommand::class,
                 BackupRestoreCommand::class,
             ]);

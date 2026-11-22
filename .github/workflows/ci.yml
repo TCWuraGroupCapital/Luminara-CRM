@@ -85,3 +85,49 @@ jobs:
 
       - name: Run Pest Suite
         run: php artisan test --compact
+
+  backup-restore:
+    runs-on: ubuntu-latest
+    name: Encrypted backup restore drill
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: krayin
+        ports:
+          - 3306
+        options: --health-cmd="mysqladmin ping -uroot -proot" --health-interval=10s --health-timeout=5s --health-retries=5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: bcmath, calendar, curl, exif, gd, imap, intl, mbstring, openssl, pcntl, pdo, pdo_mysql, sodium, tokenizer, zip
+          ini-values: error_reporting=E_ALL
+          tools: composer:v2
+
+      - name: Install Composer Dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Seed the database
+        run: |
+          cp .env.example .env
+          sed -i "s|^\(APP_ENV=\s*\).*$|\1testing|" .env
+          sed -i "s|^\(DB_HOST=\s*\).*$|\1127.0.0.1|" .env
+          sed -i "s|^\(DB_PORT=\s*\).*$|\1${{ job.services.mysql.ports['3306'] }}|" .env
+          sed -i "s|^\(DB_DATABASE=\s*\).*$|\1krayin|" .env
+          sed -i "s|^\(DB_USERNAME=\s*\).*$|\1root|" .env
+          sed -i "s|^\(DB_PASSWORD=\s*\).*$|\1root|" .env
+          php artisan key:generate --force
+          php artisan krayin-crm:install --skip-env-check --skip-admin-creation --no-interaction
+
+      - name: Backup encrypted, restore into a fresh database, and diff row counts
+        run: bash bin/backup-restore-drill.sh
