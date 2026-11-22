@@ -6,6 +6,8 @@ This changelog consists of the bug & security fixes and new features being inclu
 
 * [feature] The security audit log now records when a person, organization, lead, quote, or activity is created, updated, or deleted, and when data is exported (CSV, Excel, PDF, or Google Contacts). Each entry stores the actor, the workspace, the request id, the entity, and the names of the fields that changed. Field values are not stored. The audit screen can filter by event, entity, action, actor, workspace, and request id. Large batches are written together, and each workspace keeps its own log.
 
+* [fixed] The secret scan checks the pull request and the branch it merges into. It no longer fails because a secret exists only on some other open branch.
+
 * [fixed] The production image sent two `Content-Security-Policy` headers on `/tma`: the mini app's own, and Apache's identical copy, which was no longer stripped once the app started sending its policy. Apache now leaves CSP entirely to the app. The Docker smoke test now checks the app's policy on the sign-in page instead of the old Apache-only header on `/up`. Three stale PHPStan baseline entries for the error handler were removed, and a Pint style issue in a test was fixed.
 
 * [feature] Added `Webkul\Sso`: single sign-on through any OpenID Connect provider, behind `LUMINARA_SSO` (off by default). Set-up for Google Workspace is in `docs/sso-google-workspace.md`.
