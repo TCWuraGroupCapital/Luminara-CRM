@@ -30,6 +30,7 @@
         "phpoffice/phpspreadsheet": "^1.30.6",
         "prettus/l5-repository": "^3.0",
         "pusher/pusher-php-server": "^7.3",
+        "sentry/sentry-laravel": "^4.20",
         "smalot/pdfparser": "^2.11",
         "webklex/laravel-imap": "^6.0"
     },

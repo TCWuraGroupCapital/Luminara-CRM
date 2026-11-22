@@ -76,7 +76,7 @@ for v in mysql storage; do
 done
 P="docker compose -p luminara-prod -f compose.prod.yaml --env-file .env.prod --profile cloudflare --profile offsite"
 $P up -d --no-build db redis app worker scheduler
-curl -fsS "http://127.0.0.1:$(grep '^APP_PORT=' .env.prod | cut -d= -f2)/up" && echo OK
+curl -fsS "http://127.0.0.1:$(grep '^APP_PORT=' .env.prod | cut -d= -f2)/health/ready" && echo OK
 ```
 
 **Switch the traffic.** Stop the tunnel on the old host first, so two copies of the CRM never take writes at the same time:
@@ -90,7 +90,7 @@ $P up -d --no-build cloudflared backup-sync
 
 ## 5. Check
 
-- [ ] `https://<your domain>/up` answers 200, and `/.well-known/agent.json` lists `https://` addresses.
+- [ ] `https://<your domain>/health/ready` answers 200 with `"status":"ok"` (or `"degraded"` when only backup or ledger age is behind). `https://<your domain>/up` still answers 200. `/.well-known/agent.json` lists `https://` addresses.
 - [ ] Sign in and open a lead. Two-factor sign-in still works, because `APP_KEY` came across in `.env.prod`.
 - [ ] `docker logs luminara-prod-backup-sync-1` shows `offsite sync ok` within a few minutes.
 - [ ] `$P exec -u www-data app php artisan luminara:ledger-verify --json` reports the chain intact.
@@ -106,4 +106,4 @@ Within the first hours, before many new changes: stop `cloudflared` on the serve
 
 Copy the new `git archive`, build it as in step 3, then run `bash bin/release.sh` in `/opt/luminara/app`. It backs up, starts the new version next to the old one, switches without an outage, keeps the previous image as `luminara-prod:rollback-previous` and migrates every workspace. See "Releases without downtime" in [deployment-cloudflare-github.md](./deployment-cloudflare-github.md).
 
-From then on, add `-f compose.prod.rolling.yaml` after `-f compose.prod.yaml` in `$P`, and check the app with `$P exec app curl -fsS http://127.0.0.1/up`, because the host port is no longer published.
+From then on, add `-f compose.prod.rolling.yaml` after `-f compose.prod.yaml` in `$P`, and check the app with `$P exec app curl -fsS http://127.0.0.1/health/ready`, because the host port is no longer published.

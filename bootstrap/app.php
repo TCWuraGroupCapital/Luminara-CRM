@@ -5,7 +5,9 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
+use Sentry\Laravel\Integration;
 use Webkul\Installer\Http\Middleware\CanInstall;
+use Webkul\Security\Support\SentryGate;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -44,5 +46,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // The SDK ships with the app and stays dormant until SENTRY_LARAVEL_DSN is set.
+        if (SentryGate::enabled() && class_exists(Integration::class)) {
+            Integration::handles($exceptions);
+        }
     })->create();

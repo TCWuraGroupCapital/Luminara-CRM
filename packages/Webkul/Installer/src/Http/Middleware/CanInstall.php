@@ -15,7 +15,9 @@ class CanInstall
      */
     public function handle(Request $request, Closure $next): mixed
     {
-        if ($request->is('up')) {
+        // /up is liveness. /health/ready must answer with JSON even before installation,
+        // instead of redirecting the probe to the installer.
+        if ($request->is('up') || $request->is('health/ready')) {
             return $next($request);
         }
 

@@ -47,8 +47,19 @@ x-app-common: &app-common
     LUMINARA_SSO: "${LUMINARA_SSO:-false}"
     MAIL_RECEIVER_DRIVER: "${MAIL_RECEIVER_DRIVER:-sendgrid}"
     MAIL_RECEIVER_INBOUND_TOKEN: "${MAIL_RECEIVER_INBOUND_TOKEN:-}"
-    LOG_CHANNEL: "${LOG_CHANNEL:-stderr}"
+    LOG_CHANNEL: "${LOG_CHANNEL:-json}"
     LOG_LEVEL: "${LOG_LEVEL:-info}"
+    # Empty leaves the Sentry SDK fully off. A generic SENTRY_DSN is not read.
+    SENTRY_LARAVEL_DSN: "${SENTRY_LARAVEL_DSN:-}"
+    SENTRY_ENVIRONMENT: "${SENTRY_ENVIRONMENT:-production}"
+    OBSERVE_ALERT_EMAIL: "${OBSERVE_ALERT_EMAIL:-}"
+    OBSERVE_ALERT_SLACK_WEBHOOK: "${OBSERVE_ALERT_SLACK_WEBHOOK:-}"
+    HEALTH_QUEUE_MAX_AGE_SECONDS: "${HEALTH_QUEUE_MAX_AGE_SECONDS:-180}"
+    HEALTH_QUEUE_START_GRACE_SECONDS: "${HEALTH_QUEUE_START_GRACE_SECONDS:-180}"
+    HEALTH_BACKUP_MAX_AGE_SECONDS: "${HEALTH_BACKUP_MAX_AGE_SECONDS:-93600}"
+    HEALTH_BACKUP_CRITICAL: "${HEALTH_BACKUP_CRITICAL:-false}"
+    HEALTH_LEDGER_SEAL_MAX_AGE_SECONDS: "${HEALTH_LEDGER_SEAL_MAX_AGE_SECONDS:-7200}"
+    HEALTH_LEDGER_SEAL_CRITICAL: "${HEALTH_LEDGER_SEAL_CRITICAL:-false}"
     SECURITY_REQUIRE_ADMIN_MFA: "${SECURITY_REQUIRE_ADMIN_MFA:-${SECURITY_ENFORCE_ADMIN_MFA:-true}}"
     SECURITY_MAX_FAILED_LOGINS_PER_EMAIL: "${SECURITY_MAX_FAILED_LOGINS_PER_EMAIL:-10}"
     SECURITY_BACKUP_RETENTION_DAYS: "${SECURITY_BACKUP_RETENTION_DAYS:-14}"
@@ -100,7 +111,9 @@ services:
       - egress
       - tunnel
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1/up >/dev/null || exit 1"]
+      # Readiness: database, Redis, queue heartbeat, backup age, ledger seal age.
+      # /up remains liveness (the image HEALTHCHECK). curl fails the probe on 503.
+      test: ["CMD-SHELL", "curl -fsS --max-time 4 http://127.0.0.1/health/ready >/dev/null || exit 1"]
       interval: 20s
       timeout: 5s
       retries: 5
@@ -129,6 +142,8 @@ services:
     networks:
       - backend
       - egress
+    # The worker does not serve HTTP. Its health check stays the queue process.
+    # Dependency readiness is the app's /health/ready probe.
     healthcheck:
       test: ["CMD-SHELL", "grep -qa 'queue:work' /proc/1/cmdline || exit 1"]
       interval: 30s
@@ -160,11 +175,15 @@ services:
     networks:
       - backend
       - egress
+    # The process must be schedule:work, and the queue heartbeat it writes must be fresh.
+    # During the start grace a missing heartbeat is still success, so this container can
+    # boot after the app (the app waits on this heartbeat only after its own grace).
     healthcheck:
-      test: ["CMD-SHELL", "grep -qa 'schedule:work' /proc/1/cmdline || exit 1"]
+      test: ["CMD-SHELL", "grep -qa 'schedule:work' /proc/1/cmdline && php /var/www/html/artisan luminara:queue-heartbeat --check"]
       interval: 30s
-      timeout: 5s
+      timeout: 15s
       retries: 3
+      start_period: 90s
     stop_signal: SIGTERM
     deploy:
       resources:

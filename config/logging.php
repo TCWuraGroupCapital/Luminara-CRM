@@ -3,6 +3,8 @@
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
+use Monolog\Processor\PsrLogMessageProcessor;
+use Webkul\Security\Logging\RedactingJsonFormatter;
 
 return [
 
@@ -79,6 +81,21 @@ return [
             'with' => [
                 'stream' => 'php://stderr',
             ],
+        ],
+
+        /*
+         | One JSON object per line on stderr. Select it with LOG_CHANNEL=json.
+         | Secret context keys (password, token, dsn, webhook, and similar) are redacted.
+         */
+        'json' => [
+            'driver' => 'monolog',
+            'level' => env('LOG_LEVEL', 'debug'),
+            'handler' => StreamHandler::class,
+            'formatter' => RedactingJsonFormatter::class,
+            'with' => [
+                'stream' => 'php://stderr',
+            ],
+            'processors' => [PsrLogMessageProcessor::class],
         ],
 
         'syslog' => [

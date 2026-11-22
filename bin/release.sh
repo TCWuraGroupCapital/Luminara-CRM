@@ -132,7 +132,7 @@ while :; do
     [[ $SECONDS -ge $deadline ]] && abandon "the new version was not healthy after ${timeout}s (state: ${state}, health: ${health})."
     sleep 1
 done
-docker exec "$new" curl -fsS -o /dev/null http://127.0.0.1/up || abandon "the new version does not answer its own health check."
+docker exec "$new" curl -fsS --max-time 4 -o /dev/null http://127.0.0.1/health/ready || abandon "the new version does not answer its readiness check."
 
 if [[ "$old_image" == "$new_image" ]]; then
     echo "Same image as the one that was serving: this release applied settings only."

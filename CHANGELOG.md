@@ -4,6 +4,15 @@ This changelog consists of the bug & security fixes and new features being inclu
 
 ## **v2.2.9 (Upcoming)**
 
+* [feature] Added a readiness report at `/health/ready`, structured production logs, and operational alerts.
+    * The JSON report checks the database, Redis, a queue heartbeat written every minute by `luminara:queue-heartbeat`, the age of the newest successful backup, and the ledger seal age when that feature is installed.
+    * The endpoint answers 503 when a critical check fails. The database, Redis, and a stale queue heartbeat are critical. A short start grace keeps the scheduler from deadlocking on the first boot. Backup age and ledger seal age are reported, and they fail the HTTP status only when `HEALTH_BACKUP_CRITICAL` or `HEALTH_LEDGER_SEAL_CRITICAL` is true.
+    * The report is rate limited and does not include secrets, exception text, or connection details.
+    * `LOG_CHANNEL=json` writes one JSON object per line and redacts secret fields. Production compose selects that channel by default.
+    * The Sentry Laravel SDK stays inactive unless `SENTRY_LARAVEL_DSN` is set.
+    * `luminara:ops-alert` runs every five minutes. It logs at critical, and can email or post to a Slack webhook, when failed jobs increase or backups are too old.
+    * The app health check in `compose.prod.yaml` calls `/health/ready`. The scheduler health check also requires the queue heartbeat. See `docs/observability.md`.
+
 * [fixed] The production image sent two `Content-Security-Policy` headers on `/tma`: the mini app's own, and Apache's identical copy, which was no longer stripped once the app started sending its policy. Apache now leaves CSP entirely to the app. The Docker smoke test now checks the app's policy on the sign-in page instead of the old Apache-only header on `/up`. Three stale PHPStan baseline entries for the error handler were removed, and a Pint style issue in a test was fixed.
 
 * [feature] Added `Webkul\Sso`: single sign-on through any OpenID Connect provider, behind `LUMINARA_SSO` (off by default). Set-up for Google Workspace is in `docs/sso-google-workspace.md`.
