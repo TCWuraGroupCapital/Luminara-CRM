@@ -138,7 +138,7 @@ The script backs up and verifies the database, starts the new version next to th
 - **Settings.** Run the script after editing `.env.prod` too. Add `--skip-backup` when no new image is involved.
 - **Rollback.** The script tags the image that was serving as `<project>:rollback-previous` and prints the two commands that put it back. Database migrations are not undone.
 - **Migrations may only add.** The new version migrates the main database while the old one still serves, so a release may add tables and columns but not remove or rename them. Do that one release later.
-- **Check inside the container**, since no host port is published: `docker compose ... exec app curl -fsS http://127.0.0.1/up`.
+- **Check inside the container**, since no host port is published: `docker compose ... exec app curl -fsS http://127.0.0.1/health/ready`. `/up` is still the process liveness probe.
 - The first run replaces a container that still has the host port. That run is restart-free too.
 
 This removes the downtime of a release. It doesn't protect against the host itself failing.
@@ -161,7 +161,7 @@ In Cloudflare Zero Trust (`Networks > Tunnels`):
    - **Rule 1 — Immutable Vite Assets (`Cache Everything`, Edge TTL `1 year`):**
      `http.request.uri.path matches "^/(admin|installer|webform)/build/assets/"`
    - **Rule 2 — Bypass Dynamic CRM, API, TMA, Ledger, A/B & Auth Endpoints (`Bypass Cache`):**
-     `http.request.uri.path matches "^/(admin|api|tma|receipts|experiments|web-forms|up|llms\.txt|\.well-known/agent\.json)"`
+     `http.request.uri.path matches "^/(admin|api|tma|receipts|experiments|web-forms|up|health|llms\.txt|\.well-known/agent\.json)"`
 3. **WAF / Bot Fight Mode Exceptions (`Security > WAF > Custom Rules`):**
    - Skip *Managed Challenge / JS Challenge / Super Bot Fight Mode* (while keeping OWASP SQLi/XSS Managed Rules active) on:
      - `http.request.method eq "POST" and http.request.uri.path eq "/api/tma/bot/webhook"` (Telegram Bot intake/pairing webhook authenticated via `X-Telegram-Bot-Api-Secret-Token`)
@@ -170,7 +170,7 @@ In Cloudflare Zero Trust (`Networks > Tunnels`):
      - `http.request.method eq "POST" and http.request.uri.path contains "/mail/inbound-parse"` (SendGrid / Mailgun inbound webhook)
      - `http.request.method eq "POST" and http.request.uri.path matches "^/web-forms/forms/"` (embedded lead capture forms)
      - `http.request.uri.path matches "^/experiments/(track|assign/)"` (public A/B assignment & conversion beacons)
-     - `http.request.method eq "GET" and http.request.uri.path eq "/up"` (synthetic uptime probes)
+     - `http.request.method eq "GET" and http.request.uri.path in {"/up" "/health/ready"}` (liveness and readiness probes)
    - Optional Edge Rate Limit: block IPs exceeding `30` `POST` requests/minute to `/admin/login` or `/admin/security/mfa/verify`.
 
 ---

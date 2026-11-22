@@ -36,3 +36,11 @@ Schedule::command('luminara:backup-verify')
 Schedule::command('luminara:ledger-seal')
     ->hourly()
     ->withoutOverlapping(10);
+
+Schedule::command('luminara:queue-heartbeat')
+    ->everyMinute()
+    ->withoutOverlapping(2);
+
+Schedule::command('luminara:ops-alert')
+    ->everyFiveMinutes()
+    ->withoutOverlapping(5);

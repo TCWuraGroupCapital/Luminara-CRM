@@ -13,7 +13,9 @@ use Webkul\Core\ViewRenderEventManager;
 use Webkul\Security\Console\Commands\BackupCommand;
 use Webkul\Security\Console\Commands\BackupRestoreCommand;
 use Webkul\Security\Console\Commands\BackupVerifyCommand;
+use Webkul\Security\Console\Commands\OpsAlertCommand;
 use Webkul\Security\Console\Commands\ProvisionCommand;
+use Webkul\Security\Console\Commands\QueueHeartbeatCommand;
 use Webkul\Security\Http\Middleware\ContentSecurityPolicy;
 use Webkul\Security\Http\Middleware\EnforceAdminMfa;
 use Webkul\Security\Listeners\DeepHealthCheckListener;
@@ -31,6 +33,8 @@ class SecurityServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../Resources/views', 'security');
 
         $this->loadRoutesFrom(__DIR__.'/../Routes/admin.php');
+
+        $this->loadRoutesFrom(__DIR__.'/../Routes/health.php');
 
         $router->pushMiddlewareToGroup('web', EnforceAdminMfa::class);
         $router->pushMiddlewareToGroup('web', ContentSecurityPolicy::class);
@@ -54,6 +58,8 @@ class SecurityServiceProvider extends ServiceProvider
                 BackupCommand::class,
                 BackupVerifyCommand::class,
                 BackupRestoreCommand::class,
+                QueueHeartbeatCommand::class,
+                OpsAlertCommand::class,
             ]);
         }
 
