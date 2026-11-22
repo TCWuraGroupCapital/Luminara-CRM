@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Security\Models\SecurityAuditLog;
+use Webkul\Security\Support\AuditContext;
 
 class AuditLogController extends Controller
 {
@@ -76,9 +77,9 @@ class AuditLogController extends Controller
             $query->where('workspace', $workspace);
         }
 
-        $requestId = $this->token($request, 'request_id', 64);
+        $requestId = $this->plain($request, 'request_id', 64);
 
-        if ($requestId !== null && strlen($requestId) >= 8) {
+        if ($requestId !== null && AuditContext::isValid($requestId)) {
             $query->where('request_id', $requestId);
         }
 

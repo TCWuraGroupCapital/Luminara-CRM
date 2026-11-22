@@ -102,9 +102,7 @@ class SecurityServiceProvider extends ServiceProvider
         $this->app->singleton(EntityAuditObserver::class);
 
         foreach ([Person::class, Organization::class, Lead::class, Quote::class, Activity::class, AttributeValue::class] as $model) {
-            if (class_exists($model)) {
-                $model::observe(EntityAuditObserver::class);
-            }
+            $model::observe(EntityAuditObserver::class);
         }
     }
 
@@ -125,12 +123,7 @@ class SecurityServiceProvider extends ServiceProvider
         });
 
         Event::listen(JobProcessing::class, static function (JobProcessing $event): void {
-            $incoming = $event->job->payload()['luminara_request_id'] ?? null;
-            $id = is_string($incoming) && preg_match('/^[A-Za-z0-9._:-]{8,64}$/', $incoming) === 1
-                ? $incoming
-                : (string) Str::uuid();
-
-            AuditContext::set($id);
+            AuditContext::set(AuditContext::accept($event->job->payload()['luminara_request_id'] ?? null));
         });
 
         Queue::createPayloadUsing(static function (): array {

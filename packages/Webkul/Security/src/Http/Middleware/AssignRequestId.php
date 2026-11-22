@@ -4,7 +4,6 @@ namespace Webkul\Security\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 use Webkul\Security\Support\AuditContext;
 
@@ -15,10 +14,7 @@ class AssignRequestId
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $incoming = $request->headers->get('X-Request-Id');
-        $id = is_string($incoming) && preg_match('/^[A-Za-z0-9._:-]{8,64}$/', $incoming) === 1
-            ? $incoming
-            : (string) Str::uuid();
+        $id = AuditContext::accept($request->headers->get('X-Request-Id'));
 
         AuditContext::set($id);
         $request->attributes->set('luminara_request_id', $id);

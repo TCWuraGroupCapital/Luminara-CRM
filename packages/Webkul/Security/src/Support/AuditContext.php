@@ -9,7 +9,26 @@ use Illuminate\Support\Str;
  */
 final class AuditContext
 {
+    /**
+     * Callers may send their own id. Anything else is replaced so the column cannot hold free text.
+     */
+    public const PATTERN = '/^[A-Za-z0-9._:-]{8,64}$/';
+
     private static ?string $requestId = null;
+
+    public static function isValid(string $value): bool
+    {
+        return preg_match(self::PATTERN, $value) === 1;
+    }
+
+    public static function accept(mixed $incoming): string
+    {
+        if (is_string($incoming) && self::isValid($incoming)) {
+            return $incoming;
+        }
+
+        return (string) Str::uuid();
+    }
 
     public static function set(?string $requestId): void
     {
